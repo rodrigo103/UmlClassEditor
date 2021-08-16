@@ -1,6 +1,6 @@
-package com.nathaniel.motus.umlclasseditor.model;
+package com.nathaniel.motus.umlclasseditor.model
 
-public enum TypeMultiplicity {
+enum class TypeMultiplicity {
     SINGLE,
     ARRAY,
     COLLECTION
