@@ -90,7 +90,7 @@ class UmlClass : UmlType {
     var umlClassAttributeCount: Int
     var methods: ArrayList<UmlClassMethod?>
     var umlClassMethodCount: Int
-    var values: ArrayList<UmlEnumValue?>
+    var values: ArrayList<UmlEnumValue>
     var valueCount: Int
     var classOrder = 0
     var umlClassNormalXPos = 0f
@@ -129,7 +129,7 @@ class UmlClass : UmlType {
         name: String?, classOrder: Int, umlClassType: UmlClassType,
         attributes: ArrayList<UmlClassAttribute?>, attributeCount: Int,
         methods: ArrayList<UmlClassMethod?>, methodCount: Int,
-        values: ArrayList<UmlEnumValue?>, valueCount: Int,
+        values: ArrayList<UmlEnumValue>, valueCount: Int,
         umlClassNormalXPos: Float, umlClassNormalYPos: Float
     ) : super(name, TypeLevel.PROJECT) {
         this.classOrder = classOrder
@@ -148,7 +148,7 @@ class UmlClass : UmlType {
         name: String?, umlClassType: UmlClassType,
         attributes: ArrayList<UmlClassAttribute?>,
         methods: ArrayList<UmlClassMethod?>,
-        values: ArrayList<UmlEnumValue?>,
+        values: ArrayList<UmlEnumValue>,
         umlClassNormalXPos: Float, umlClassNormalYPos: Float
     ) : super(name, TypeLevel.PROJECT) {
         this.umlClassType = umlClassType
@@ -214,7 +214,7 @@ class UmlClass : UmlType {
         attributes.remove(attribute)
     }
 
-    fun addValue(value: UmlEnumValue?) {
+    fun addValue(value: UmlEnumValue) {
         values.add(value)
         valueCount++
     }
@@ -398,11 +398,11 @@ class UmlClass : UmlType {
             return umlClassMethods
         }
 
-        private fun getValuesFromJSONArray(jsonArray: JSONArray): ArrayList<UmlEnumValue?> {
-            val values = ArrayList<UmlEnumValue?>()
+        private fun getValuesFromJSONArray(jsonArray: JSONArray): ArrayList<UmlEnumValue> {
+            val values = ArrayList<UmlEnumValue>()
             var jsonValue = jsonArray.remove(0) as JSONObject
             while (jsonValue != null) {
-                values.add(UmlEnumValue.Companion.fromJSONObject(jsonValue))
+                values.add(UmlEnumValue.Companion.fromJSONObject(jsonValue)!!)
                 jsonValue = jsonArray.remove(0) as JSONObject
             }
             return values

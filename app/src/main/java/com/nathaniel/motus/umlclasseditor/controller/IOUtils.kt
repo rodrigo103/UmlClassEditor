@@ -1,4 +1,4 @@
-package com.nathaniel.motus.umlclasseditor.model
+package com.nathaniel.motus.umlclasseditor.controller
 
 import android.view.View.OnTouchListener
 import com.nathaniel.motus.umlclasseditor.view.GraphFragment
@@ -74,48 +74,112 @@ import android.widget.AbsListView
 import android.util.SparseBooleanArray
 import android.text.Html
 import android.app.Activity
+import android.content.Context
+import android.net.Uri
+import android.util.Log
 import android.widget.BaseExpandableListAdapter
+import java.io.*
+import java.util.*
 
-class UmlEnumValue     //    **********************************************************************************************
-//    Constructors
-//    **********************************************************************************************
-    (private var mName: String, val valueOrder: Int) : AdapterItem {
-
-    //    **********************************************************************************************
-    //    Getters and setters
-    //    **********************************************************************************************
-    override var name: String?
-        get() = mName
-        set(name) {
-            mName = name!!
-        }
-
-    //    **********************************************************************************************
-    //    JSON methods
-    //    **********************************************************************************************
-    fun toJSONObject(): JSONObject? {
-        val jsonObject = JSONObject()
-        return try {
-            jsonObject.put(JSON_ENUM_VALUE_NAME, mName)
-            jsonObject.put(JSON_ENUM_VALUE_INDEX, valueOrder)
-            jsonObject
-        } catch (jsonException: JSONException) {
-            null
+object IOUtils {
+    fun saveFileToInternalStorage(data: String?, file: File?) {
+        try {
+            val fileWriter = FileWriter(file)
+            fileWriter.append(data)
+            fileWriter.flush()
+            fileWriter.close()
+        } catch (e: IOException) {
+            Log.i("TEST", "Saving failed")
         }
     }
 
-    companion object {
-        private const val JSON_ENUM_VALUE_NAME = "EnumValueName"
-        private const val JSON_ENUM_VALUE_INDEX = "EnumValueIndex"
-        fun fromJSONObject(jsonObject: JSONObject): UmlEnumValue? {
-            return try {
-                UmlEnumValue(
-                    jsonObject.getString(JSON_ENUM_VALUE_NAME),
-                    jsonObject.getInt(JSON_ENUM_VALUE_INDEX)
-                )
-            } catch (jsonException: JSONException) {
-                null
+    fun getFileFromInternalStorage(file: File): String {
+        var projectString = ""
+        if (file.exists()) {
+            val bufferedReader: BufferedReader
+            try {
+                bufferedReader = BufferedReader(FileReader(file))
+                try {
+                    var readString = bufferedReader.readLine()
+                    while (readString != null) {
+                        projectString = projectString + readString
+                        readString = bufferedReader.readLine()
+                    }
+                } finally {
+                    bufferedReader.close()
+                }
+            } catch (e: IOException) {
+                Log.i("TEST", "Loading failed")
             }
+        }
+        return projectString
+    }
+
+    fun saveFileToExternalStorage(context: Context, data: String, externalStorageUri: Uri?) {
+        try {
+            val outputStream = context.contentResolver.openOutputStream(
+                externalStorageUri!!
+            )
+            outputStream!!.write(data.toByteArray())
+            outputStream.flush()
+            outputStream.close()
+            Log.i("TEST", "Project saved")
+        } catch (e: IOException) {
+            Log.i("TEST", "Failed saving project")
+            Log.i("TEST", e.message!!)
+        }
+    }
+
+    fun readFileFromExternalStorage(context: Context, externalStorageUri: Uri?): String {
+        var data = ""
+        try {
+            val inputStream = context.contentResolver.openInputStream(
+                externalStorageUri!!
+            )
+            val bufferedReader = BufferedReader(InputStreamReader(inputStream))
+            data = bufferedReader.readLine()
+            Log.i("TEST", "Project loaded")
+        } catch (e: IOException) {
+            Log.i("TEST", "Failed loading project")
+        }
+        return data
+    }
+
+    fun sortedFiles(file: File): ArrayList<String> {
+        val files = file.listFiles()
+        val fileList = ArrayList<String>()
+        for (f in files) fileList.add(f.name)
+        Collections.sort(fileList)
+        return fileList
+    }
+
+    fun readRawHtmlFile(context: Context, rawId: Int): String {
+        val inputStream = context.resources.openRawResource(rawId)
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        var i: Int
+        try {
+            i = inputStream.read()
+            while (i != -1) {
+                byteArrayOutputStream.write(i)
+                i = inputStream.read()
+            }
+            inputStream.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return byteArrayOutputStream.toString()
+    }
+
+    //    **********************************************************************************************
+    //    Side utilities
+    //    **********************************************************************************************
+    fun getAppVersionCode(context: Context): Int {
+        val manager = context.packageManager
+        return try {
+            val info = manager.getPackageInfo(context.packageName, 0)
+            info.versionCode
+        } catch (e: PackageManager.NameNotFoundException) {
+            -1
         }
     }
 }

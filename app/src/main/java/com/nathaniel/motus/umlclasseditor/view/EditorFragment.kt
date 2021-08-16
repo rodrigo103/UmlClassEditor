@@ -1,4 +1,4 @@
-package com.nathaniel.motus.umlclasseditor.model
+package com.nathaniel.motus.umlclasseditor.view
 
 import android.view.View.OnTouchListener
 import com.nathaniel.motus.umlclasseditor.view.GraphFragment
@@ -74,48 +74,74 @@ import android.widget.AbsListView
 import android.util.SparseBooleanArray
 import android.text.Html
 import android.app.Activity
+import android.view.View
 import android.widget.BaseExpandableListAdapter
+import androidx.fragment.app.Fragment
 
-class UmlEnumValue     //    **********************************************************************************************
-//    Constructors
-//    **********************************************************************************************
-    (private var mName: String, val valueOrder: Int) : AdapterItem {
-
-    //    **********************************************************************************************
-    //    Getters and setters
-    //    **********************************************************************************************
-    override var name: String?
-        get() = mName
-        set(name) {
-            mName = name!!
-        }
+abstract class EditorFragment : Fragment() {
+    protected var mCallback: FragmentObserver? = null
+    protected var mOnBackPressedCallback: OnBackPressedCallback? = null
 
     //    **********************************************************************************************
-    //    JSON methods
+    //    Abstract methods
     //    **********************************************************************************************
-    fun toJSONObject(): JSONObject? {
-        val jsonObject = JSONObject()
-        return try {
-            jsonObject.put(JSON_ENUM_VALUE_NAME, mName)
-            jsonObject.put(JSON_ENUM_VALUE_INDEX, valueOrder)
-            jsonObject
-        } catch (jsonException: JSONException) {
-            null
+    protected abstract fun readBundle()
+    protected abstract fun clearDraftObject()
+    protected abstract fun createOrUpdateObject(): Boolean
+    protected abstract fun closeFragment()
+    protected abstract fun configureViews()
+    protected abstract fun initializeMembers()
+    protected abstract fun initializeFields()
+    protected abstract fun setOnCreateOrEditDisplay()
+
+    //    **********************************************************************************************
+    //    Common methods
+    //    **********************************************************************************************
+    protected fun createOnBackPressedCallback() {
+        mOnBackPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                onCancelButtonCLicked()
+            }
         }
     }
 
-    companion object {
-        private const val JSON_ENUM_VALUE_NAME = "EnumValueName"
-        private const val JSON_ENUM_VALUE_INDEX = "EnumValueIndex"
-        fun fromJSONObject(jsonObject: JSONObject): UmlEnumValue? {
-            return try {
-                UmlEnumValue(
-                    jsonObject.getString(JSON_ENUM_VALUE_NAME),
-                    jsonObject.getInt(JSON_ENUM_VALUE_INDEX)
-                )
-            } catch (jsonException: JSONException) {
-                null
-            }
+    protected fun onCancelButtonCLicked() {
+        clearDraftObject()
+        mOnBackPressedCallback!!.remove()
+        closeFragment()
+    }
+
+    protected fun onOKButtonClicked() {
+        if (createOrUpdateObject()) {
+            mOnBackPressedCallback!!.remove()
+            closeFragment()
         }
+    }
+
+    protected fun setOnBackPressedCallback() {
+        requireActivity().onBackPressedDispatcher.addCallback(this, mOnBackPressedCallback!!)
+    }
+
+    protected fun createCallbackToParentActivity() {
+        mCallback = activity as FragmentObserver?
+    }
+
+    //    **********************************************************************************************
+    //    Fragment events
+    //    **********************************************************************************************
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (arguments != null) readBundle()
+        createOnBackPressedCallback()
+        setOnBackPressedCallback()
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        createCallbackToParentActivity()
+        configureViews()
+        initializeMembers()
+        initializeFields()
+        setOnCreateOrEditDisplay()
     }
 }
