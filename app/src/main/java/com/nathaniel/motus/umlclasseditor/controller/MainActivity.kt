@@ -1,797 +1,747 @@
-package com.nathaniel.motus.umlclasseditor.controller;
+package com.nathaniel.motus.umlclasseditor.controller
 
-import android.Manifest;
-import android.app.AlertDialog;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.text.Html;
-import android.util.Log;
-import android.util.SparseBooleanArray;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.AbsListView;
-import android.widget.ArrayAdapter;
-import android.widget.EditText;
-import android.widget.FrameLayout;
-import android.widget.ListView;
-import android.widget.Spinner;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.Manifest
+import android.view.View.OnTouchListener
+import com.nathaniel.motus.umlclasseditor.view.GraphFragment
+import com.nathaniel.motus.umlclasseditor.model.UmlProject
+import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
+import com.nathaniel.motus.umlclasseditor.model.UmlClass
+import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
+import android.graphics.Typeface
+import android.graphics.DashPathEffect
+import android.content.res.TypedArray
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation
+import com.nathaniel.motus.umlclasseditor.view.GraphView
+import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
+import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
+import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
+import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
+import android.content.DialogInterface
+import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
+import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
+import com.nathaniel.motus.umlclasseditor.view.EditorFragment
+import android.widget.AdapterView.OnItemLongClickListener
+import android.widget.ExpandableListView.OnChildClickListener
+import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.AdapterItem
+import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
+import com.nathaniel.motus.umlclasseditor.model.AddItemString
+import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import com.nathaniel.motus.umlclasseditor.model.UmlType
+import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
+import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.TypeMultiplicity
+import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator
+import com.nathaniel.motus.umlclasseditor.model.MethodParameter
+import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
+import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
+import org.json.JSONArray
+import org.json.JSONObject
+import org.json.JSONException
+import kotlin.jvm.JvmOverloads
+import android.content.pm.PackageManager
+import android.content.pm.PackageInfo
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.navigation.NavigationView
+import androidx.drawerlayout.widget.DrawerLayout
+import androidx.core.view.MenuCompat
+import androidx.annotation.RequiresApi
+import android.os.Build
+import android.content.SharedPreferences
+import android.content.SharedPreferences.Editor
+import com.nathaniel.motus.umlclasseditor.controller.MainActivity
+import androidx.core.view.GravityCompat
+import android.content.Intent
+import android.util.SparseBooleanArray
+import android.text.Html
+import android.app.Activity
+import android.app.AlertDialog
+import android.content.Context
+import android.util.Log
+import android.view.*
+import android.widget.*
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.widget.Toolbar
+import androidx.fragment.app.Fragment
+import java.io.File
+import java.util.*
 
-import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.view.GravityCompat;
-import androidx.core.view.MenuCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.fragment.app.Fragment;
+class MainActivity : AppCompatActivity(), FragmentObserver, GraphViewObserver,
+    NavigationView.OnNavigationItemSelectedListener {
+    //    **********************************************************************************************
+    //    Getters and setters
+    //    **********************************************************************************************
+    override var project: UmlProject? = null
 
-import com.google.android.material.navigation.NavigationView;
-import com.nathaniel.motus.umlclasseditor.R;
-import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator;
-import com.nathaniel.motus.umlclasseditor.model.UmlClass;
-import com.nathaniel.motus.umlclasseditor.model.UmlProject;
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation;
-import com.nathaniel.motus.umlclasseditor.model.UmlType;
-import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment;
-import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment;
-import com.nathaniel.motus.umlclasseditor.view.GraphFragment;
-import com.nathaniel.motus.umlclasseditor.view.GraphView;
-import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment;
-import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment;
+    //    GraphViewObserver
+    override val isExpectingTouchLocation = false
+    private var mPurpose = FragmentObserver.Purpose.NONE
+    private var mToolbar: Toolbar? = null
+    private var mDrawerLayout: DrawerLayout? = null
+    private var mNavigationView: NavigationView? = null
+    private var mMenuHeaderProjectNameText: TextView? = null
+    private var mFirstBackPressedTime: Long = 0
+    private var mOnBackPressedCallback: OnBackPressedCallback? = null
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
+    //    **********************************************************************************************
+    //    Fragments declaration
+    //    **********************************************************************************************
+    private var mGraphFragment: GraphFragment? = null
+    private var mClassEditorFragment: ClassEditorFragment? = null
+    private var mAttributeEditorFragment: AttributeEditorFragment? = null
+    private var mMethodEditorFragment: MethodEditorFragment? = null
+    private var mParameterEditorFragment: ParameterEditorFragment? = null
 
-public class MainActivity extends AppCompatActivity implements FragmentObserver,
-        GraphView.GraphViewObserver,
-        NavigationView.OnNavigationItemSelectedListener{
-
-    private UmlProject mProject;
-    private boolean mExpectingTouchLocation=false;
-    private Purpose mPurpose= FragmentObserver.Purpose.NONE;
-    private Toolbar mToolbar;
-    private DrawerLayout mDrawerLayout;
-    private NavigationView mNavigationView;
-    private TextView mMenuHeaderProjectNameText;
-
-    private static boolean sWriteExternalStoragePermission =true;
-    private static boolean sReadExternalStoragePermission=true;
-    private static final int WRITE_EXTERNAL_STORAGE_INDEX=0;
-    private static final int READ_EXTERNAL_STORAGE_INDEX=1;
-
-    private long mFirstBackPressedTime =0;
-    private static long DOUBLE_BACK_PRESSED_DELAY=2000;
-    private OnBackPressedCallback mOnBackPressedCallback;
-
-//    **********************************************************************************************
-//    Fragments declaration
-//    **********************************************************************************************
-    private GraphFragment mGraphFragment;
-    private ClassEditorFragment mClassEditorFragment;
-    private AttributeEditorFragment mAttributeEditorFragment;
-    private MethodEditorFragment mMethodEditorFragment;
-    private ParameterEditorFragment mParameterEditorFragment;
-
-    private static final String GRAPH_FRAGMENT_TAG="graphFragment";
-    private static final String CLASS_EDITOR_FRAGMENT_TAG="classEditorFragment";
-    private static final String ATTRIBUTE_EDITOR_FRAGMENT_TAG="attributeEditorFragment";
-    private static final String METHOD_EDITOR_FRAGMENT_TAG="methodEditorFragment";
-    private static final String PARAMETER_EDITOR_FRAGMENT_TAG="parameterEditorFragment";
-
-    private static final String SHARED_PREFERENCES_PROJECT_NAME="sharedPreferencesProjectName";
-
-    private static final int INTENT_CREATE_DOCUMENT_EXPORT_PROJECT =1000;
-    private static final int INTENT_OPEN_DOCUMENT_IMPORT_PROJECT =2000;
-    private static final int INTENT_CREATE_DOCUMENT_EXPORT_CUSTOM_TYPES=3000;
-    private static final int INTENT_OPEN_DOCUMENT_IMPORT_CUSTOM_TYPES=4000;
-
-    private static final int REQUEST_PERMISSION=5000;
-
-//    **********************************************************************************************
-//    Views declaration
-//    **********************************************************************************************
-    private FrameLayout mMainActivityFrame;
-    private GraphView mGraphView;
-
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    //    **********************************************************************************************
+    //    Views declaration
+    //    **********************************************************************************************
+    private var mMainActivityFrame: FrameLayout? = null
+    private var mGraphView: GraphView? = null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
         //Instantiate views
-        mMainActivityFrame=findViewById(R.id.activity_main_frame);
-
-        UmlType.clearUmlTypes();
-        UmlType.initializePrimitiveUmlTypes(this);
-        UmlType.initializeCustomUmlTypes(this);
-        getPreferences();
-        configureToolbar();
-        configureDrawerLayout();
-        configureNavigationView();
-        configureAndDisplayGraphFragment(R.id.activity_main_frame);
-        createOnBackPressedCallback();
-        setOnBackPressedCallback();
+        mMainActivityFrame = findViewById(R.id.activity_main_frame)
+        UmlType.Companion.clearUmlTypes()
+        UmlType.Companion.initializePrimitiveUmlTypes(this)
+        UmlType.Companion.initializeCustomUmlTypes(this)
+        preferences
+        configureToolbar()
+        configureDrawerLayout()
+        configureNavigationView()
+        configureAndDisplayGraphFragment(R.id.activity_main_frame)
+        createOnBackPressedCallback()
+        setOnBackPressedCallback()
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.activity_main_toolbar_menu,menu);
-        MenuCompat.setGroupDividerEnabled(menu,true);
-        return super.onCreateOptionsMenu(menu);
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.activity_main_toolbar_menu, menu)
+        MenuCompat.setGroupDividerEnabled(menu, true)
+        return super.onCreateOptionsMenu(menu)
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        mGraphView=findViewById(R.id.graphview);
-        mGraphView.setUmlProject(mProject);
-        Log.i("TEST","onStart");
+    override fun onStart() {
+        super.onStart()
+        mGraphView = findViewById(R.id.graphview)
+        mGraphView.setUmlProject(project)
+        Log.i("TEST", "onStart")
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        mProject.save(getApplicationContext());
-        Log.i("TEST","save : project");
-        savePreferences();
-        Log.i("TEST", "save : preferences");
-        UmlType.saveCustomUmlTypes(this);
-        Log.i("TEST","save : custom types");
+    override fun onDestroy() {
+        super.onDestroy()
+        project!!.save(applicationContext)
+        Log.i("TEST", "save : project")
+        savePreferences()
+        Log.i("TEST", "save : preferences")
+        UmlType.Companion.saveCustomUmlTypes(this)
+        Log.i("TEST", "save : custom types")
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
-    @Override
-    protected void onResume() {
-        super.onResume();
-        checkPermissions();
+    override fun onResume() {
+        super.onResume()
+        checkPermissions()
     }
 
-//    **********************************************************************************************
-//    Configuration methods
-//    **********************************************************************************************
-
-    private void configureToolbar() {
-        mToolbar=findViewById(R.id.main_activity_toolbar);
-        setSupportActionBar(mToolbar);
+    //    **********************************************************************************************
+    //    Configuration methods
+    //    **********************************************************************************************
+    private fun configureToolbar() {
+        mToolbar = findViewById(R.id.main_activity_toolbar)
+        setSupportActionBar(mToolbar)
     }
 
-    private void configureDrawerLayout() {
-        mDrawerLayout=findViewById(R.id.activity_main_drawer);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, mDrawerLayout, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        mDrawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
+    private fun configureDrawerLayout() {
+        mDrawerLayout = findViewById(R.id.activity_main_drawer)
+        val toggle = ActionBarDrawerToggle(
+            this,
+            mDrawerLayout,
+            mToolbar,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
+        mDrawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
     }
 
-    private void configureNavigationView() {
-        mNavigationView=findViewById(R.id.activity_main_navigation_view);
-        mMenuHeaderProjectNameText= mNavigationView.getHeaderView(0).findViewById(R.id.activity_main_navigation_view_header_project_name_text);
-        updateNavigationView();
-        mNavigationView.setNavigationItemSelectedListener(this);
+    private fun configureNavigationView() {
+        mNavigationView = findViewById(R.id.activity_main_navigation_view)
+        mMenuHeaderProjectNameText = mNavigationView.getHeaderView(0)
+            .findViewById(R.id.activity_main_navigation_view_header_project_name_text)
+        updateNavigationView()
+        mNavigationView.setNavigationItemSelectedListener(this)
     }
 
-    private void updateNavigationView() {
-        mMenuHeaderProjectNameText.setText(mProject.getName());
+    private fun updateNavigationView() {
+        mMenuHeaderProjectNameText.setText(project.getName())
     }
 
-    private void savePreferences() {
-        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        SharedPreferences.Editor editor=preferences.edit();
-        editor.putString(SHARED_PREFERENCES_PROJECT_NAME,mProject.getName());
-        editor.apply();
+    private fun savePreferences() {
+        val preferences = getPreferences(MODE_PRIVATE)
+        val editor = preferences.edit()
+        editor.putString(SHARED_PREFERENCES_PROJECT_NAME, project.getName())
+        editor.apply()
     }
 
-    private void getPreferences() {
-        SharedPreferences preferences=getPreferences(MODE_PRIVATE);
-        String projectName=preferences.getString(SHARED_PREFERENCES_PROJECT_NAME,null);
-        Log.i("TEST","Loaded preferences");
-        if (projectName != null) {
-            mProject = UmlProject.load(getApplicationContext(), projectName);
-        } else {
-            mProject=new UmlProject("NewProject",getApplicationContext());
+    private val preferences: Unit
+        private get() {
+            val preferences = getPreferences(MODE_PRIVATE)
+            val projectName = preferences.getString(SHARED_PREFERENCES_PROJECT_NAME, null)
+            Log.i("TEST", "Loaded preferences")
+            if (projectName != null) {
+                project = UmlProject.Companion.load(applicationContext, projectName)
+            } else {
+                project = UmlProject("NewProject", applicationContext)
+            }
+        }
+
+    private fun createOnBackPressedCallback() {
+        mOnBackPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                onBackButtonPressed()
+            }
         }
     }
 
-    private void createOnBackPressedCallback() {
-        mOnBackPressedCallback=new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                onBackButtonPressed();
-            }
-        };
+    private fun setOnBackPressedCallback() {
+        this.onBackPressedDispatcher.addCallback(this, mOnBackPressedCallback!!)
     }
 
-    private void setOnBackPressedCallback() {
-        this.getOnBackPressedDispatcher().addCallback(this,mOnBackPressedCallback);
+    private fun onBackButtonPressed() {
+        if (Calendar.getInstance().timeInMillis - mFirstBackPressedTime > DOUBLE_BACK_PRESSED_DELAY) {
+            mFirstBackPressedTime = Calendar.getInstance().timeInMillis
+            Toast.makeText(this, "Press back again to leave", Toast.LENGTH_SHORT).show()
+        } else finish()
     }
 
-    private void onBackButtonPressed() {
-        if (Calendar.getInstance().getTimeInMillis() - mFirstBackPressedTime > DOUBLE_BACK_PRESSED_DELAY) {
-            mFirstBackPressedTime=Calendar.getInstance().getTimeInMillis();
-            Toast.makeText(this,"Press back again to leave",Toast.LENGTH_SHORT).show();
-        }else
-            finish();
-    }
-
-//    **********************************************************************************************
-//    Fragment management
-//    **********************************************************************************************
-    private void configureAndDisplayGraphFragment(int viewContainerId){
+    //    **********************************************************************************************
+    //    Fragment management
+    //    **********************************************************************************************
+    private fun configureAndDisplayGraphFragment(viewContainerId: Int) {
         //handle graph fragment
 
 //        mGraphFragment=new GraphFragment();
-        mGraphFragment=GraphFragment.newInstance();
-        getSupportFragmentManager().beginTransaction()
-                .replace(viewContainerId,mGraphFragment,GRAPH_FRAGMENT_TAG)
-                .commitNow();
+        mGraphFragment = GraphFragment.Companion.newInstance()
+        supportFragmentManager.beginTransaction()
+            .replace(viewContainerId, mGraphFragment!!, GRAPH_FRAGMENT_TAG)
+            .commitNow()
     }
 
-    private void configureAndDisplayClassEditorFragment(int viewContainerId,float xLocation,float yLocation,int classOrder) {
+    private fun configureAndDisplayClassEditorFragment(
+        viewContainerId: Int,
+        xLocation: Float,
+        yLocation: Float,
+        classOrder: Int
+    ) {
         //handle class editor fragment
-
-        if (mClassEditorFragment==null) {
-            mClassEditorFragment = ClassEditorFragment.newInstance(xLocation, yLocation, classOrder);
-            getSupportFragmentManager().beginTransaction()
-                    .hide(mGraphFragment)
-                    .add(viewContainerId, mClassEditorFragment, CLASS_EDITOR_FRAGMENT_TAG)
-                    .commitNow();
-        }
-        else {
-            mClassEditorFragment.updateClassEditorFragment(xLocation, yLocation, classOrder);
-            getSupportFragmentManager().beginTransaction()
-                    .hide(mGraphFragment)
-                    .show(mClassEditorFragment)
-                    .commitNow();
+        if (mClassEditorFragment == null) {
+            mClassEditorFragment =
+                ClassEditorFragment.Companion.newInstance(xLocation, yLocation, classOrder)
+            supportFragmentManager.beginTransaction()
+                .hide(mGraphFragment!!)
+                .add(viewContainerId, mClassEditorFragment!!, CLASS_EDITOR_FRAGMENT_TAG)
+                .commitNow()
+        } else {
+            mClassEditorFragment!!.updateClassEditorFragment(xLocation, yLocation, classOrder)
+            supportFragmentManager.beginTransaction()
+                .hide(mGraphFragment!!)
+                .show(mClassEditorFragment!!)
+                .commitNow()
         }
     }
 
-    private void configureAndDisplayAttributeEditorFragment(int viewContainerId,int attributeOrder,int classOrder) {
-
+    private fun configureAndDisplayAttributeEditorFragment(
+        viewContainerId: Int,
+        attributeOrder: Int,
+        classOrder: Int
+    ) {
         if (mAttributeEditorFragment == null) {
-            mAttributeEditorFragment = AttributeEditorFragment.newInstance(mClassEditorFragment.getTag(), attributeOrder, classOrder);
-            getSupportFragmentManager().beginTransaction()
-                    .hide(mClassEditorFragment)
-                    .add(viewContainerId, mAttributeEditorFragment, ATTRIBUTE_EDITOR_FRAGMENT_TAG)
-                    .commitNow();
+            mAttributeEditorFragment = AttributeEditorFragment.Companion.newInstance(
+                mClassEditorFragment!!.tag, attributeOrder, classOrder
+            )
+            supportFragmentManager.beginTransaction()
+                .hide(mClassEditorFragment!!)
+                .add(viewContainerId, mAttributeEditorFragment!!, ATTRIBUTE_EDITOR_FRAGMENT_TAG)
+                .commitNow()
         } else {
-            mAttributeEditorFragment.updateAttributeEditorFragment(attributeOrder,classOrder);
-            getSupportFragmentManager().beginTransaction()
-                    .hide(mClassEditorFragment)
-                    .show(mAttributeEditorFragment)
-                  .commitNow();
+            mAttributeEditorFragment!!.updateAttributeEditorFragment(attributeOrder, classOrder)
+            supportFragmentManager.beginTransaction()
+                .hide(mClassEditorFragment!!)
+                .show(mAttributeEditorFragment!!)
+                .commitNow()
         }
     }
 
-    private void configureAndDisplayMethodEditorFragment(int viewContainerId, int methodOrder,int classOrder) {
+    private fun configureAndDisplayMethodEditorFragment(
+        viewContainerId: Int,
+        methodOrder: Int,
+        classOrder: Int
+    ) {
         if (mMethodEditorFragment == null) {
-            mMethodEditorFragment = MethodEditorFragment.newInstance(mClassEditorFragment.getTag(), methodOrder, classOrder);
-            getSupportFragmentManager().beginTransaction()
-                    .hide(mClassEditorFragment)
-                    .add(viewContainerId, mMethodEditorFragment, METHOD_EDITOR_FRAGMENT_TAG)
-                    .commitNow();
+            mMethodEditorFragment = MethodEditorFragment.Companion.newInstance(
+                mClassEditorFragment!!.tag,
+                methodOrder,
+                classOrder
+            )
+            supportFragmentManager.beginTransaction()
+                .hide(mClassEditorFragment!!)
+                .add(viewContainerId, mMethodEditorFragment!!, METHOD_EDITOR_FRAGMENT_TAG)
+                .commitNow()
         } else {
-            mMethodEditorFragment.updateMethodEditorFragment(methodOrder,classOrder);
-            getSupportFragmentManager().beginTransaction()
-                    .hide(mClassEditorFragment)
-                    .show(mMethodEditorFragment)
-                    .commitNow();
+            mMethodEditorFragment!!.updateMethodEditorFragment(methodOrder, classOrder)
+            supportFragmentManager.beginTransaction()
+                .hide(mClassEditorFragment!!)
+                .show(mMethodEditorFragment!!)
+                .commitNow()
         }
     }
 
-    private void configureAndDisplayParameterEditorFragment(int viewContainerId, int parameterOrder,int methodOrder,int classOrder) {
+    private fun configureAndDisplayParameterEditorFragment(
+        viewContainerId: Int,
+        parameterOrder: Int,
+        methodOrder: Int,
+        classOrder: Int
+    ) {
         if (mParameterEditorFragment == null) {
-            mParameterEditorFragment = ParameterEditorFragment.newInstance(mMethodEditorFragment.getTag(), parameterOrder, methodOrder, classOrder);
-            getSupportFragmentManager().beginTransaction()
-                    .hide(mMethodEditorFragment)
-                    .add(viewContainerId, mParameterEditorFragment, PARAMETER_EDITOR_FRAGMENT_TAG)
-                    .commitNow();
+            mParameterEditorFragment = ParameterEditorFragment.Companion.newInstance(
+                mMethodEditorFragment!!.tag, parameterOrder, methodOrder, classOrder
+            )
+            supportFragmentManager.beginTransaction()
+                .hide(mMethodEditorFragment!!)
+                .add(viewContainerId, mParameterEditorFragment!!, PARAMETER_EDITOR_FRAGMENT_TAG)
+                .commitNow()
         } else {
-            mParameterEditorFragment.updateParameterEditorFragment(parameterOrder,methodOrder,classOrder);
-            getSupportFragmentManager().beginTransaction()
-                    .hide(mMethodEditorFragment)
-                    .show(mParameterEditorFragment)
-                    .commitNow();
+            mParameterEditorFragment!!.updateParameterEditorFragment(
+                parameterOrder,
+                methodOrder,
+                classOrder
+            )
+            supportFragmentManager.beginTransaction()
+                .hide(mMethodEditorFragment!!)
+                .show(mParameterEditorFragment!!)
+                .commitNow()
         }
     }
 
-//    **********************************************************************************************
-//    Getters and setters
-//    **********************************************************************************************
-
-    public void setProject(UmlProject project) {
-        mProject = project;
+    //    **********************************************************************************************
+    //    Callback methods
+    //    **********************************************************************************************
+    //    GraphFragmentObserver
+    override fun setPurpose(purpose: FragmentObserver.Purpose) {
+        mPurpose = purpose
     }
 
-//    **********************************************************************************************
-//    Callback methods
-//    **********************************************************************************************
-
-//    GraphFragmentObserver
-
-    @Override
-    public void setPurpose(Purpose purpose) {
-        mPurpose=purpose;
+    override fun closeClassEditorFragment(fragment: Fragment?) {
+        supportFragmentManager.beginTransaction()
+            .hide(fragment!!)
+            .show(mGraphFragment!!)
+            .commitNow()
+        mGraphView!!.invalidate()
     }
 
-    @Override
-    public void closeClassEditorFragment(Fragment fragment) {
-        getSupportFragmentManager().beginTransaction()
-                .hide(fragment)
-                .show(mGraphFragment)
-                .commitNow();
-        mGraphView.invalidate();
+    override fun closeAttributeEditorFragment(fragment: Fragment?) {
+        supportFragmentManager.beginTransaction()
+            .hide(fragment!!)
+            .show(mClassEditorFragment!!)
+            .commit()
+        mClassEditorFragment!!.updateLists()
     }
 
-    @Override
-    public void closeAttributeEditorFragment(Fragment fragment) {
-        getSupportFragmentManager().beginTransaction()
-                .hide(fragment)
-                .show(mClassEditorFragment)
-                .commit();
-        mClassEditorFragment.updateLists();
+    override fun closeMethodEditorFragment(fragment: Fragment?) {
+        supportFragmentManager.beginTransaction()
+            .hide(fragment!!)
+            .show(mClassEditorFragment!!)
+            .commitNow()
+        mClassEditorFragment!!.updateLists()
     }
 
-    @Override
-    public void closeMethodEditorFragment(Fragment fragment) {
-        getSupportFragmentManager().beginTransaction()
-                .hide(fragment)
-                .show(mClassEditorFragment)
-                .commitNow();
-        mClassEditorFragment.updateLists();
+    override fun closeParameterEditorFragment(fragment: Fragment?) {
+        supportFragmentManager.beginTransaction()
+            .hide(fragment!!)
+            .show(mMethodEditorFragment!!)
+            .commitNow()
+        mMethodEditorFragment!!.updateLists()
     }
 
-    @Override
-    public void closeParameterEditorFragment(Fragment fragment) {
-        getSupportFragmentManager().beginTransaction()
-                .hide(fragment)
-                .show(mMethodEditorFragment)
-                .commitNow();
-        mMethodEditorFragment.updateLists();
+    override fun openAttributeEditorFragment(attributeOrder: Int, classOrder: Int) {
+        configureAndDisplayAttributeEditorFragment(
+            R.id.activity_main_frame,
+            attributeOrder,
+            classOrder
+        )
     }
 
-    @Override
-    public void openAttributeEditorFragment(int attributeOrder,int classOrder) {
-        configureAndDisplayAttributeEditorFragment(R.id.activity_main_frame,attributeOrder,classOrder);
+    override fun openMethodEditorFragment(methodOrder: Int, classOrder: Int) {
+        configureAndDisplayMethodEditorFragment(R.id.activity_main_frame, methodOrder, classOrder)
     }
 
-    @Override
-    public void openMethodEditorFragment(int methodOrder,int classOrder) {
-        configureAndDisplayMethodEditorFragment(R.id.activity_main_frame,methodOrder,classOrder);
+    override fun openParameterEditorFragment(
+        parameterOrder: Int,
+        methodOrder: Int,
+        classOrder: Int
+    ) {
+        configureAndDisplayParameterEditorFragment(
+            R.id.activity_main_frame,
+            parameterOrder,
+            methodOrder,
+            classOrder
+        )
     }
 
-    @Override
-    public void openParameterEditorFragment(int parameterOrder,int methodOrder,int classOrder) {
-        configureAndDisplayParameterEditorFragment(R.id.activity_main_frame,parameterOrder,methodOrder,classOrder);
+    override fun createClass(xLocation: Float, yLocation: Float) {
+        configureAndDisplayClassEditorFragment(R.id.activity_main_frame, xLocation, yLocation, -1)
     }
 
-    @Override
-    public UmlProject getProject() {
-        return this.mProject;
+    override fun editClass(umlClass: UmlClass?) {
+        configureAndDisplayClassEditorFragment(
+            R.id.activity_main_frame,
+            0f,
+            0f,
+            umlClass.getClassOrder()
+        )
     }
 
-//    GraphViewObserver
-
-    @Override
-    public boolean isExpectingTouchLocation() {
-        return mExpectingTouchLocation;
+    override fun createRelation(
+        startClass: UmlClass?,
+        endClass: UmlClass?,
+        relationType: UmlRelationType?
+    ) {
+        if (!project!!.relationAlreadyExistsBetween(startClass, endClass)) project!!.addUmlRelation(
+            UmlRelation(startClass, endClass, relationType)
+        )
     }
 
-    @Override
-    public void createClass(float xLocation, float yLocation) {
-        configureAndDisplayClassEditorFragment(R.id.activity_main_frame,xLocation,yLocation,-1);
-    }
-
-    @Override
-    public void editClass(UmlClass umlClass) {
-        configureAndDisplayClassEditorFragment(R.id.activity_main_frame,0,0,umlClass.getClassOrder());
-    }
-
-    @Override
-    public void createRelation(UmlClass startClass, UmlClass endClass, UmlRelation.UmlRelationType relationType) {
-        if (!mProject.relationAlreadyExistsBetween(startClass,endClass))
-            mProject.addUmlRelation(new UmlRelation(startClass,endClass,relationType));
-    }
-
-//    **********************************************************************************************
-//    Navigation view events
-//    **********************************************************************************************
-
-    @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        int menuId=item.getItemId();
+    //    **********************************************************************************************
+    //    Navigation view events
+    //    **********************************************************************************************
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        val menuId = item.itemId
         if (menuId == R.id.drawer_menu_new_project) {
-            drawerMenuNewProject();
+            drawerMenuNewProject()
         } else if (menuId == R.id.drawer_menu_load_project) {
-            drawerMenuLoadProject();
+            drawerMenuLoadProject()
         } else if (menuId == R.id.drawer_menu_save_as) {
-            drawerMenuSaveAs();
+            drawerMenuSaveAs()
         } else if (menuId == R.id.drawer_menu_merge_project) {
-            drawerMenuMerge();
+            drawerMenuMerge()
         } else if (menuId == R.id.drawer_menu_delete_project) {
-            drawerMenuDeleteProject();
+            drawerMenuDeleteProject()
         }
-        this.mDrawerLayout.closeDrawer(GravityCompat.START);
-
-        return true;
+        mDrawerLayout!!.closeDrawer(GravityCompat.START)
+        return true
     }
 
-//    **********************************************************************************************
-//    Navigation view called methods
-//    **********************************************************************************************
-
-    private void drawerMenuSaveAs() {
-        AlertDialog.Builder builder=new AlertDialog.Builder(this);
-        final EditText editText=new EditText(this);
-        editText.setText(mProject.getName());
+    //    **********************************************************************************************
+    //    Navigation view called methods
+    //    **********************************************************************************************
+    private fun drawerMenuSaveAs() {
+        val builder = AlertDialog.Builder(this)
+        val editText = EditText(this)
+        editText.setText(project.getName())
         builder.setTitle("Save as")
-                .setMessage("Enter new name :")
-                .setView(editText)
-                .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-
-                    }
-                })
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        saveAs(editText.getText().toString());
-                    }
-                })
-                .create()
-                .show();
+            .setMessage("Enter new name :")
+            .setView(editText)
+            .setNegativeButton("CANCEL") { dialogInterface, i -> }
+            .setPositiveButton("OK") { dialogInterface, i -> saveAs(editText.text.toString()) }
+            .create()
+            .show()
     }
 
-    private void drawerMenuNewProject() {
-        mProject.save(this);
-        UmlType.clearProjectUmlTypes();
-        mProject=new UmlProject("NewProject",this);
-        mGraphView.setUmlProject(mProject);
-        updateNavigationView();
+    private fun drawerMenuNewProject() {
+        project!!.save(this)
+        UmlType.Companion.clearProjectUmlTypes()
+        project = UmlProject("NewProject", this)
+        mGraphView!!.setUmlProject(project)
+        updateNavigationView()
     }
 
-    private void drawerMenuLoadProject() {
-        mProject.save(this);
-
-        final Spinner spinner=new Spinner(this);
-        spinner.setAdapter(projectDirectoryAdapter());
-
-        AlertDialog.Builder builder=new AlertDialog.Builder(this);
+    private fun drawerMenuLoadProject() {
+        project!!.save(this)
+        val spinner = Spinner(this)
+        spinner.adapter = projectDirectoryAdapter()
+        val builder = AlertDialog.Builder(this)
         builder.setTitle("Load project")
-                .setMessage("Choose project to load :")
-                .setView(spinner)
-                .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-
+            .setMessage("Choose project to load :")
+            .setView(spinner)
+            .setNegativeButton("CANCEL") { dialogInterface, i -> }
+            .setPositiveButton("OK", object : DialogInterface.OnClickListener {
+                override fun onClick(dialogInterface: DialogInterface, i: Int) {
+                    val fileName = spinner.selectedItem.toString()
+                    if (fileName != null) {
+                        UmlType.Companion.clearProjectUmlTypes()
+                        project = UmlProject.Companion.load(applicationContext, fileName)
+                        mGraphView!!.setUmlProject(project)
+                        updateNavigationView()
                     }
-                })
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        String fileName=spinner.getSelectedItem().toString();
-                        if (fileName!=null) {
-                            UmlType.clearProjectUmlTypes();
-                            mProject = UmlProject.load(getApplicationContext(), fileName);
-                            mGraphView.setUmlProject(mProject);
-                            updateNavigationView();
-                        }
-                    }
-                })
-                .create()
-                .show();
+                }
+            })
+            .create()
+            .show()
     }
 
-    private void drawerMenuDeleteProject() {
-
-        final Context context=this;
-
-        final Spinner spinner=new Spinner(this);
-        spinner.setAdapter(projectDirectoryAdapter());
-
-        AlertDialog.Builder builder=new AlertDialog.Builder(this);
+    private fun drawerMenuDeleteProject() {
+        val context: Context = this
+        val spinner = Spinner(this)
+        spinner.adapter = projectDirectoryAdapter()
+        val builder = AlertDialog.Builder(this)
         builder.setTitle("Delete project")
-                .setMessage("Choose project to delete :")
-                .setView(spinner)
-                .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-
-                    }
-                })
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        String fileName=spinner.getSelectedItem().toString();
-                        if (fileName!=null) {
-                            File pathName=new File(getFilesDir(),UmlProject.PROJECT_DIRECTORY);
-                            final File file=new File(pathName,fileName);
-                            AlertDialog.Builder alert=new AlertDialog.Builder(context);
-                            alert.setTitle("Delete Project")
-                                    .setMessage("Are you sure you want to delete "+fileName+" ?")
-                                    .setNegativeButton("NO", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
-
-                                        }
-                                    })
-                                    .setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
-                                            file.delete();
-                                        }
-                                    })
-                                    .create()
-                                    .show();
-                        }
-                    }
-                })
-                .create()
-                .show();
+            .setMessage("Choose project to delete :")
+            .setView(spinner)
+            .setNegativeButton("CANCEL") { dialogInterface, i -> }
+            .setPositiveButton("OK") { dialogInterface, i ->
+                val fileName = spinner.selectedItem.toString()
+                if (fileName != null) {
+                    val pathName = File(filesDir, UmlProject.Companion.PROJECT_DIRECTORY)
+                    val file = File(pathName, fileName)
+                    val alert = AlertDialog.Builder(context)
+                    alert.setTitle("Delete Project")
+                        .setMessage("Are you sure you want to delete $fileName ?")
+                        .setNegativeButton("NO") { dialogInterface, i -> }
+                        .setPositiveButton("YES") { dialogInterface, i -> file.delete() }
+                        .create()
+                        .show()
+                }
+            }
+            .create()
+            .show()
     }
 
-    private void drawerMenuMerge() {
-        final Spinner spinner=new Spinner(this);
-        spinner.setAdapter(projectDirectoryAdapter());
-        final Context currentContext=this;
-
-        AlertDialog.Builder builder=new AlertDialog.Builder(this);
+    private fun drawerMenuMerge() {
+        val spinner = Spinner(this)
+        spinner.adapter = projectDirectoryAdapter()
+        val currentContext: Context = this
+        val builder = AlertDialog.Builder(this)
         builder.setTitle("Merge project")
-                .setMessage("Choose project to merge")
-                .setView(spinner)
-                .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-
-                    }
-                })
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        String fileName=spinner.getSelectedItem().toString();
-                        if (fileName!=null) {
-                            UmlProject project = UmlProject.load(getApplicationContext(), fileName);
-                            mProject.mergeWith(project);
-                            mGraphView.invalidate();
-                        }
-
-                    }
-                })
-                .create()
-                .show();
-
+            .setMessage("Choose project to merge")
+            .setView(spinner)
+            .setNegativeButton("CANCEL") { dialogInterface, i -> }
+            .setPositiveButton("OK") { dialogInterface, i ->
+                val fileName = spinner.selectedItem.toString()
+                if (fileName != null) {
+                    val project: UmlProject =
+                        UmlProject.Companion.load(applicationContext, fileName)
+                    project.mergeWith(project)
+                    mGraphView!!.invalidate()
+                }
+            }
+            .create()
+            .show()
     }
 
-    private ArrayAdapter<String> projectDirectoryAdapter() {
+    private fun projectDirectoryAdapter(): ArrayAdapter<String?> {
         //Create an array adapter to set a spinner with all project file names
-        ArrayAdapter<String> adapter=new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,IOUtils.sortedFiles(new File(getFilesDir(),UmlProject.PROJECT_DIRECTORY)));
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        return adapter;
+        val adapter = ArrayAdapter(
+            this, android.R.layout.simple_spinner_item, IOUtils.sortedFiles(
+                File(
+                    filesDir, UmlProject.Companion.PROJECT_DIRECTORY
+                )
+            )
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        return adapter
     }
 
-//    **********************************************************************************************
-//    Option menu events
-//    **********************************************************************************************
-
-    public boolean onOptionsItemSelected(MenuItem menuItem) {
-        int itemId = menuItem.getItemId();
+    //    **********************************************************************************************
+    //    Option menu events
+    //    **********************************************************************************************
+    override fun onOptionsItemSelected(menuItem: MenuItem): Boolean {
+        val itemId = menuItem.itemId
         if (itemId == R.id.toolbar_menu_export) {
-            if(sWriteExternalStoragePermission)
-                menuItemExport();
+            if (sWriteExternalStoragePermission) menuItemExport()
         } else if (itemId == R.id.toolbar_menu_import) {
-            if (sReadExternalStoragePermission)
-                menuItemImport();
+            if (sReadExternalStoragePermission) menuItemImport()
         } else if (itemId == R.id.toolbar_menu_create_custom_type) {
-            menuCreateCustomType();
+            menuCreateCustomType()
         } else if (itemId == R.id.toolbar_menu_delete_custom_types) {
-            menuDeleteCustomTypes();
+            menuDeleteCustomTypes()
         } else if (itemId == R.id.toolbar_menu_export_custom_types) {
-            if (sWriteExternalStoragePermission)
-                menuExportCustomTypes();
+            if (sWriteExternalStoragePermission) menuExportCustomTypes()
         } else if (itemId == R.id.toolbar_menu_import_custom_types) {
-            if (sReadExternalStoragePermission)
-                menuImportCustomTypes();
+            if (sReadExternalStoragePermission) menuImportCustomTypes()
         } else if (itemId == R.id.toolbar_menu_help) {
-            menuHelp();
+            menuHelp()
         }
-        return true;
+        return true
     }
 
-//    **********************************************************************************************
-//    Menu item called methods
-//    **********************************************************************************************
-
-    private void menuItemExport() {
-        Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);
-        intent.setType("text/*");
-        startActivityForResult(intent, INTENT_CREATE_DOCUMENT_EXPORT_PROJECT);
+    //    **********************************************************************************************
+    //    Menu item called methods
+    //    **********************************************************************************************
+    private fun menuItemExport() {
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+        intent.type = "text/*"
+        startActivityForResult(intent, INTENT_CREATE_DOCUMENT_EXPORT_PROJECT)
     }
 
-    private void menuItemImport() {
-        Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.setType("*/*");
-        startActivityForResult(intent, INTENT_OPEN_DOCUMENT_IMPORT_PROJECT);
+    private fun menuItemImport() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        intent.type = "*/*"
+        startActivityForResult(intent, INTENT_OPEN_DOCUMENT_IMPORT_PROJECT)
     }
 
-    private void menuCreateCustomType() {
-        final EditText editText=new EditText(this);
-        final Context context=getApplicationContext();
-        AlertDialog.Builder adb=new AlertDialog.Builder(this);
+    private fun menuCreateCustomType() {
+        val editText = EditText(this)
+        val context = applicationContext
+        val adb = AlertDialog.Builder(this)
         adb.setTitle("Create custom type")
-                .setMessage("Enter custom type name :")
-                .setView(editText)
-                .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-
-                    }
-                })
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        String typeName=editText.getText().toString();
-                        if (typeName.equals(""))
-                            Toast.makeText(context,"Failed : name cannot be blank",Toast.LENGTH_SHORT).show();
-                        else if (UmlType.containsUmlTypeNamed(typeName))
-                            Toast.makeText(context,"Failed : this name is already used",Toast.LENGTH_SHORT).show();
-                        else{
-                            UmlType.createUmlType(typeName, UmlType.TypeLevel.CUSTOM);
-                            Toast.makeText(context,"Custom type created",Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                })
-                .create()
-                .show();
+            .setMessage("Enter custom type name :")
+            .setView(editText)
+            .setNegativeButton("CANCEL") { dialogInterface, i -> }
+            .setPositiveButton("OK") { dialogInterface, i ->
+                val typeName = editText.text.toString()
+                if (typeName == "") Toast.makeText(
+                    context,
+                    "Failed : name cannot be blank",
+                    Toast.LENGTH_SHORT
+                ).show() else if (UmlType.Companion.containsUmlTypeNamed(typeName)) Toast.makeText(
+                    context,
+                    "Failed : this name is already used",
+                    Toast.LENGTH_SHORT
+                ).show() else {
+                    UmlType.Companion.createUmlType(typeName, TypeLevel.CUSTOM)
+                    Toast.makeText(context, "Custom type created", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .create()
+            .show()
     }
 
-    private void menuDeleteCustomTypes() {
-        final ListView listView=new ListView(this);
-        List<String> listArray=new ArrayList<>();
-        for (UmlType t:UmlType.getUmlTypes())
-            if (t.isCustomUmlType()) listArray.add(t.getName());
-        Collections.sort(listArray,new TypeNameComparator());
-        ArrayAdapter<String> adapter=new ArrayAdapter<>(this, android.R.layout.simple_list_item_multiple_choice,listArray);
-        listView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
-        listView.setAdapter(adapter);
-
-        AlertDialog.Builder adb=new AlertDialog.Builder(this);
+    private fun menuDeleteCustomTypes() {
+        val listView = ListView(this)
+        val listArray: MutableList<String?> = ArrayList()
+        for (t in UmlType.Companion.getUmlTypes()) if (t!!.isCustomUmlType) listArray.add(t.name)
+        Collections.sort(listArray, TypeNameComparator())
+        val adapter =
+            ArrayAdapter(this, android.R.layout.simple_list_item_multiple_choice, listArray)
+        listView.choiceMode = AbsListView.CHOICE_MODE_MULTIPLE
+        listView.adapter = adapter
+        val adb = AlertDialog.Builder(this)
         adb.setTitle("Delete custom types")
-                .setMessage("Check custom types to delete")
-                .setView(listView)
-                .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-
+            .setMessage("Check custom types to delete")
+            .setView(listView)
+            .setNegativeButton("CANCEL") { dialogInterface, i -> }
+            .setPositiveButton("OK") { dialogInterface, i ->
+                val checkMapping = listView.checkedItemPositions
+                var t: UmlType
+                for (j in 0 until checkMapping.size()) {
+                    if (checkMapping.valueAt(j)) {
+                        t = UmlType.Companion.valueOf(
+                            listView.getItemAtPosition(
+                                checkMapping.keyAt(j)
+                            ).toString(), UmlType.Companion.getUmlTypes()
+                        )
+                        UmlType.Companion.removeUmlType(t)
+                        project!!.removeParametersOfType(t)
+                        project!!.removeMethodsOfType(t)
+                        project!!.removeAttributesOfType(t)
+                        mGraphView!!.invalidate()
                     }
-                })
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        SparseBooleanArray checkMapping=listView.getCheckedItemPositions();
-                        UmlType t;
-                        for (int j = 0; j < checkMapping.size(); j++) {
-                            if (checkMapping.valueAt(j)) {
-                                t=UmlType.valueOf(listView.getItemAtPosition(checkMapping.keyAt(j)).toString(),UmlType.getUmlTypes());
-                                UmlType.removeUmlType(t);
-                                mProject.removeParametersOfType(t);
-                                mProject.removeMethodsOfType(t);
-                                mProject.removeAttributesOfType(t);
-                                mGraphView.invalidate();
-                            }
-                        }
-                    }
-                })
-                .create()
-                .show();
+                }
+            }
+            .create()
+            .show()
     }
 
-    private void menuExportCustomTypes() {
-        Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);
-        intent.setType("text/*");
-        startActivityForResult(intent,INTENT_CREATE_DOCUMENT_EXPORT_CUSTOM_TYPES);
+    private fun menuExportCustomTypes() {
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+        intent.type = "text/*"
+        startActivityForResult(intent, INTENT_CREATE_DOCUMENT_EXPORT_CUSTOM_TYPES)
     }
 
-    private void menuImportCustomTypes() {
-        Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.setType("*/*");
-        startActivityForResult(intent,INTENT_OPEN_DOCUMENT_IMPORT_CUSTOM_TYPES);
+    private fun menuImportCustomTypes() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        intent.type = "*/*"
+        startActivityForResult(intent, INTENT_OPEN_DOCUMENT_IMPORT_CUSTOM_TYPES)
     }
 
-    private void menuHelp() {
-        AlertDialog.Builder adb=new AlertDialog.Builder(this);
+    private fun menuHelp() {
+        val adb = AlertDialog.Builder(this)
         adb.setTitle("Help")
-                .setMessage(Html.fromHtml(IOUtils.readRawHtmlFile(this,R.raw.help_html)))
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                })
-                .create()
-                .show();
+            .setMessage(Html.fromHtml(IOUtils.readRawHtmlFile(this, R.raw.help_html)))
+            .setPositiveButton("OK") { dialog, which -> }
+            .create()
+            .show()
     }
 
-//    **********************************************************************************************
-//    Intents
-//    **********************************************************************************************
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-
+    //    **********************************************************************************************
+    //    Intents
+    //    **********************************************************************************************
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == INTENT_CREATE_DOCUMENT_EXPORT_PROJECT && resultCode == RESULT_OK) {
-            Uri fileNameUri=data.getData();
-            mProject.exportProject(this,fileNameUri);
+            val fileNameUri = data!!.data
+            project!!.exportProject(this, fileNameUri)
         } else if (requestCode == INTENT_OPEN_DOCUMENT_IMPORT_PROJECT && resultCode == RESULT_OK) {
-            Uri fileNameUri=data.getData();
-            UmlType.clearProjectUmlTypes();
-            mProject=UmlProject.importProject(this,fileNameUri);
-            mGraphView.setUmlProject(mProject);
+            val fileNameUri = data!!.data
+            UmlType.Companion.clearProjectUmlTypes()
+            project = UmlProject.Companion.importProject(this, fileNameUri)
+            mGraphView!!.setUmlProject(project)
         } else if (requestCode == INTENT_CREATE_DOCUMENT_EXPORT_CUSTOM_TYPES && resultCode == RESULT_OK) {
-            Uri fileNameUri=data.getData();
-            UmlType.exportCustomUmlTypes(this,fileNameUri);
+            val fileNameUri = data!!.data
+            UmlType.Companion.exportCustomUmlTypes(this, fileNameUri)
         } else if (requestCode == INTENT_OPEN_DOCUMENT_IMPORT_CUSTOM_TYPES && resultCode == RESULT_OK) {
-            Uri fileNameUri=data.getData();
-            UmlType.importCustomUmlTypes(this,fileNameUri);
+            val fileNameUri = data!!.data
+            UmlType.Companion.importCustomUmlTypes(this, fileNameUri)
         }
-        super.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_PERMISSION && grantResults[WRITE_EXTERNAL_STORAGE_INDEX]==PackageManager.PERMISSION_GRANTED)
-            sWriteExternalStoragePermission =true;
-        else
-            sWriteExternalStoragePermission =false;
-
-        if (requestCode == REQUEST_PERMISSION && grantResults[READ_EXTERNAL_STORAGE_INDEX]==PackageManager.PERMISSION_GRANTED)
-            sReadExternalStoragePermission =true;
-        else
-            sReadExternalStoragePermission =false;
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_PERMISSION && grantResults[WRITE_EXTERNAL_STORAGE_INDEX] == PackageManager.PERMISSION_GRANTED) sWriteExternalStoragePermission =
+            true else sWriteExternalStoragePermission = false
+        if (requestCode == REQUEST_PERMISSION && grantResults[READ_EXTERNAL_STORAGE_INDEX] == PackageManager.PERMISSION_GRANTED) sReadExternalStoragePermission =
+            true else sReadExternalStoragePermission = false
     }
 
-//    **********************************************************************************************
-//    Project management methods
-//    **********************************************************************************************
-
-    private void saveAs(String projectName) {
-        mProject.setName(projectName);
-        updateNavigationView();
-        mProject.save(getApplicationContext());
+    //    **********************************************************************************************
+    //    Project management methods
+    //    **********************************************************************************************
+    private fun saveAs(projectName: String) {
+        project.setName(projectName)
+        updateNavigationView()
+        project!!.save(applicationContext)
     }
 
-//    **********************************************************************************************
-//    Check permissions
-//    **********************************************************************************************
-
+    //    **********************************************************************************************
+    //    Check permissions
+    //    **********************************************************************************************
     @RequiresApi(api = Build.VERSION_CODES.M)
-    private void checkPermissions() {
-
+    private fun checkPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-
-            String[] permissionString={Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE};
-
-            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED
-            || checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)!=PackageManager.PERMISSION_GRANTED)
-                requestPermissions(permissionString, REQUEST_PERMISSION);
+            val permissionString = arrayOf(
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+            ) requestPermissions(permissionString, REQUEST_PERMISSION)
         }
     }
 
-
+    companion object {
+        private var sWriteExternalStoragePermission = true
+        private var sReadExternalStoragePermission = true
+        private const val WRITE_EXTERNAL_STORAGE_INDEX = 0
+        private const val READ_EXTERNAL_STORAGE_INDEX = 1
+        private const val DOUBLE_BACK_PRESSED_DELAY: Long = 2000
+        private const val GRAPH_FRAGMENT_TAG = "graphFragment"
+        private const val CLASS_EDITOR_FRAGMENT_TAG = "classEditorFragment"
+        private const val ATTRIBUTE_EDITOR_FRAGMENT_TAG = "attributeEditorFragment"
+        private const val METHOD_EDITOR_FRAGMENT_TAG = "methodEditorFragment"
+        private const val PARAMETER_EDITOR_FRAGMENT_TAG = "parameterEditorFragment"
+        private const val SHARED_PREFERENCES_PROJECT_NAME = "sharedPreferencesProjectName"
+        private const val INTENT_CREATE_DOCUMENT_EXPORT_PROJECT = 1000
+        private const val INTENT_OPEN_DOCUMENT_IMPORT_PROJECT = 2000
+        private const val INTENT_CREATE_DOCUMENT_EXPORT_CUSTOM_TYPES = 3000
+        private const val INTENT_OPEN_DOCUMENT_IMPORT_CUSTOM_TYPES = 4000
+        private const val REQUEST_PERMISSION = 5000
+    }
 }

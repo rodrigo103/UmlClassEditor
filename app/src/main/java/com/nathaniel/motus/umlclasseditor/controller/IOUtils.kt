@@ -1,130 +1,185 @@
-package com.nathaniel.motus.umlclasseditor.controller;
+package com.nathaniel.motus.umlclasseditor.controller
 
-import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.util.Log;
+import android.view.View.OnTouchListener
+import com.nathaniel.motus.umlclasseditor.view.GraphFragment
+import com.nathaniel.motus.umlclasseditor.model.UmlProject
+import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
+import com.nathaniel.motus.umlclasseditor.model.UmlClass
+import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
+import android.graphics.Typeface
+import android.graphics.DashPathEffect
+import android.content.res.TypedArray
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation
+import com.nathaniel.motus.umlclasseditor.view.GraphView
+import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
+import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
+import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
+import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
+import android.view.MotionEvent
+import android.content.DialogInterface
+import android.widget.TextView
+import android.widget.ImageButton
+import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
+import com.nathaniel.motus.umlclasseditor.view.EditorFragment
+import android.widget.AdapterView.OnItemLongClickListener
+import android.widget.RadioGroup
+import android.widget.ExpandableListView.OnChildClickListener
+import android.widget.EditText
+import android.widget.RadioButton
+import android.widget.ExpandableListView
+import android.widget.LinearLayout
+import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.AdapterItem
+import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
+import com.nathaniel.motus.umlclasseditor.model.AddItemString
+import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import android.widget.AdapterView
+import android.widget.Toast
+import com.nathaniel.motus.umlclasseditor.model.UmlType
+import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
+import android.widget.CheckBox
+import android.widget.Spinner
+import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.TypeMultiplicity
+import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator
+import android.widget.ArrayAdapter
+import com.nathaniel.motus.umlclasseditor.model.MethodParameter
+import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
+import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
+import org.json.JSONArray
+import org.json.JSONObject
+import org.json.JSONException
+import kotlin.jvm.JvmOverloads
+import android.content.pm.PackageManager
+import android.content.pm.PackageInfo
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.navigation.NavigationView
+import androidx.drawerlayout.widget.DrawerLayout
+import android.widget.FrameLayout
+import androidx.core.view.MenuCompat
+import androidx.annotation.RequiresApi
+import android.os.Build
+import android.content.SharedPreferences
+import android.content.SharedPreferences.Editor
+import com.nathaniel.motus.umlclasseditor.controller.MainActivity
+import androidx.core.view.GravityCompat
+import android.content.Intent
+import android.widget.AbsListView
+import android.util.SparseBooleanArray
+import android.text.Html
+import android.app.Activity
+import android.content.Context
+import android.net.Uri
+import android.util.Log
+import android.widget.BaseExpandableListAdapter
+import java.io.*
+import java.util.*
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-
-public class IOUtils {
-
-    private IOUtils() {
-
-    }
-
-    public static void saveFileToInternalStorage(String data,File file) {
+object IOUtils {
+    fun saveFileToInternalStorage(data: String?, file: File?) {
         try {
-            FileWriter fileWriter=new FileWriter(file);
-            fileWriter.append(data);
-            fileWriter.flush();
-            fileWriter.close();
-            } catch (IOException e) {
-            Log.i("TEST","Saving failed");
+            val fileWriter = FileWriter(file)
+            fileWriter.append(data)
+            fileWriter.flush()
+            fileWriter.close()
+        } catch (e: IOException) {
+            Log.i("TEST", "Saving failed")
         }
     }
 
-    public static String getFileFromInternalStorage(File file) {
-        String projectString="";
+    fun getFileFromInternalStorage(file: File): String {
+        var projectString = ""
         if (file.exists()) {
-            BufferedReader bufferedReader;
+            val bufferedReader: BufferedReader
             try {
-                bufferedReader = new BufferedReader(new FileReader(file));
+                bufferedReader = BufferedReader(FileReader(file))
                 try {
-                    String readString = bufferedReader.readLine();
+                    var readString = bufferedReader.readLine()
                     while (readString != null) {
-                        projectString = projectString + readString;
-                        readString = bufferedReader.readLine();
+                        projectString = projectString + readString
+                        readString = bufferedReader.readLine()
                     }
                 } finally {
-                    bufferedReader.close();
+                    bufferedReader.close()
                 }
-            } catch (IOException e) {
-                Log.i("TEST","Loading failed");
+            } catch (e: IOException) {
+                Log.i("TEST", "Loading failed")
             }
         }
-        return projectString;
+        return projectString
     }
 
-    public static void saveFileToExternalStorage(Context context, String data, Uri externalStorageUri) {
+    fun saveFileToExternalStorage(context: Context, data: String, externalStorageUri: Uri?) {
         try {
-            OutputStream outputStream=context.getContentResolver().openOutputStream(externalStorageUri);
-            outputStream.write(data.getBytes());
-            outputStream.flush();
-            outputStream.close();
-            Log.i("TEST", "Project saved");
-        } catch (IOException e) {
-            Log.i("TEST","Failed saving project");
-            Log.i("TEST",e.getMessage());
+            val outputStream = context.contentResolver.openOutputStream(
+                externalStorageUri!!
+            )
+            outputStream!!.write(data.toByteArray())
+            outputStream.flush()
+            outputStream.close()
+            Log.i("TEST", "Project saved")
+        } catch (e: IOException) {
+            Log.i("TEST", "Failed saving project")
+            Log.i("TEST", e.message!!)
         }
     }
 
-    public static String readFileFromExternalStorage(Context context, Uri externalStorageUri) {
-        String data="";
+    fun readFileFromExternalStorage(context: Context, externalStorageUri: Uri?): String {
+        var data = ""
         try {
-            InputStream inputStream = context.getContentResolver().openInputStream(externalStorageUri);
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-            data = bufferedReader.readLine();
-            Log.i("TEST","Project loaded");
-        } catch (IOException e) {
-            Log.i("TEST","Failed loading project");
+            val inputStream = context.contentResolver.openInputStream(
+                externalStorageUri!!
+            )
+            val bufferedReader = BufferedReader(InputStreamReader(inputStream))
+            data = bufferedReader.readLine()
+            Log.i("TEST", "Project loaded")
+        } catch (e: IOException) {
+            Log.i("TEST", "Failed loading project")
         }
-
-        return data;
+        return data
     }
 
-    public static ArrayList<String> sortedFiles(File file) {
-        File[] files=file.listFiles();
-        ArrayList<String> fileList=new ArrayList<>();
-
-        for (File f:files) fileList.add(f.getName());
-
-        Collections.sort(fileList);
-        return fileList;
+    fun sortedFiles(file: File): ArrayList<String> {
+        val files = file.listFiles()
+        val fileList = ArrayList<String>()
+        for (f in files) fileList.add(f.name)
+        Collections.sort(fileList)
+        return fileList
     }
 
-    public static String readRawHtmlFile(Context context,int rawId) {
-        InputStream inputStream=context.getResources().openRawResource(rawId);
-        ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
-        int i;
+    fun readRawHtmlFile(context: Context, rawId: Int): String {
+        val inputStream = context.resources.openRawResource(rawId)
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        var i: Int
         try {
-            i = inputStream.read();
+            i = inputStream.read()
             while (i != -1) {
-                byteArrayOutputStream.write(i);
-                i = inputStream.read();
+                byteArrayOutputStream.write(i)
+                i = inputStream.read()
             }
-            inputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            inputStream.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
-        return byteArrayOutputStream.toString();
+        return byteArrayOutputStream.toString()
     }
 
-//    **********************************************************************************************
-//    Side utilities
-//    **********************************************************************************************
-
-    public static int getAppVersionCode(Context context) {
-        PackageManager manager=context.getPackageManager();
-        try {
-            PackageInfo info = manager.getPackageInfo(context.getPackageName(),0);
-            return info.versionCode;
-        } catch (PackageManager.NameNotFoundException e) {
-            return -1;
+    //    **********************************************************************************************
+    //    Side utilities
+    //    **********************************************************************************************
+    fun getAppVersionCode(context: Context): Int {
+        val manager = context.packageManager
+        return try {
+            val info = manager.getPackageInfo(context.packageName, 0)
+            info.versionCode
+        } catch (e: PackageManager.NameNotFoundException) {
+            -1
         }
     }
 }

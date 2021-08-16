@@ -1,8 +1,6 @@
-package com.nathaniel.motus.umlclasseditor.model;
+package com.nathaniel.motus.umlclasseditor.model
 
-public interface AdapterItem {
+interface AdapterItem {
     //interface to populate CustomExpandableListViewAdapter
-
-    String getName();
-
+    val name: String?
 }

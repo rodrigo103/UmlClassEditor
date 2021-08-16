@@ -1,131 +1,135 @@
-package com.nathaniel.motus.umlclasseditor.model;
+package com.nathaniel.motus.umlclasseditor.model
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import android.view.View.OnTouchListener
+import com.nathaniel.motus.umlclasseditor.view.GraphFragment
+import com.nathaniel.motus.umlclasseditor.model.UmlProject
+import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
+import com.nathaniel.motus.umlclasseditor.model.UmlClass
+import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
+import android.graphics.Typeface
+import android.graphics.DashPathEffect
+import android.content.res.TypedArray
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation
+import com.nathaniel.motus.umlclasseditor.view.GraphView
+import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
+import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
+import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
+import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
+import android.view.MotionEvent
+import android.content.DialogInterface
+import android.widget.TextView
+import android.widget.ImageButton
+import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
+import com.nathaniel.motus.umlclasseditor.view.EditorFragment
+import android.widget.AdapterView.OnItemLongClickListener
+import android.widget.RadioGroup
+import android.widget.ExpandableListView.OnChildClickListener
+import android.widget.EditText
+import android.widget.RadioButton
+import android.widget.ExpandableListView
+import android.widget.LinearLayout
+import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.AdapterItem
+import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
+import com.nathaniel.motus.umlclasseditor.model.AddItemString
+import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import android.widget.AdapterView
+import android.widget.Toast
+import com.nathaniel.motus.umlclasseditor.model.UmlType
+import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
+import android.widget.CheckBox
+import android.widget.Spinner
+import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.TypeMultiplicity
+import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator
+import android.widget.ArrayAdapter
+import com.nathaniel.motus.umlclasseditor.model.MethodParameter
+import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
+import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
+import org.json.JSONArray
+import org.json.JSONObject
+import org.json.JSONException
+import kotlin.jvm.JvmOverloads
+import android.content.pm.PackageManager
+import android.content.pm.PackageInfo
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.navigation.NavigationView
+import androidx.drawerlayout.widget.DrawerLayout
+import android.widget.FrameLayout
+import androidx.core.view.MenuCompat
+import androidx.annotation.RequiresApi
+import android.os.Build
+import android.content.SharedPreferences
+import android.content.SharedPreferences.Editor
+import com.nathaniel.motus.umlclasseditor.controller.MainActivity
+import androidx.core.view.GravityCompat
+import android.content.Intent
+import android.widget.AbsListView
+import android.util.SparseBooleanArray
+import android.text.Html
+import android.app.Activity
+import android.widget.BaseExpandableListAdapter
 
-public class UmlRelation {
-
-    public enum UmlRelationType {INHERITANCE, REALIZATION,AGGREGATION,COMPOSITION,ASSOCIATION,DEPENDENCY}
-
-    private UmlClass mRelationOriginClass; //arrow starts from this
-    private UmlClass mRelationEndClass; //to this
-    private float mXOrigin;
-    private float mYOrigin;
-    private float mXEnd;
-    private float mYEnd;
-    private UmlRelationType mUmlRelationType;
-
-    public static final String JSON_RELATION_TYPE="RelationType";
-    public static final String JSON_RELATION_ORIGIN_CLASS="RelationOriginClass";
-    public static final String JSON_RELATION_END_CLASS="RelationEndCLass";
-
-//    **********************************************************************************************
+class UmlRelation     //    **********************************************************************************************
 //    Constructors
 //    **********************************************************************************************
-
-    public UmlRelation(UmlClass relationOriginClass, UmlClass relationEndClass, UmlRelationType umlRelationType) {
-        mRelationOriginClass = relationOriginClass;
-        mRelationEndClass = relationEndClass;
-        mUmlRelationType = umlRelationType;
-        mXOrigin =0;
-        mYOrigin =0;
-        mXEnd =0;
-        mYEnd =0;
+    (//    **********************************************************************************************
+    //    Getters and setters
+    //    **********************************************************************************************
+    var relationOriginClass //arrow starts from this
+    : UmlClass?, //to this
+    var relationEndClass: UmlClass?, var umlRelationType: UmlRelationType?
+) {
+    enum class UmlRelationType {
+        INHERITANCE, REALIZATION, AGGREGATION, COMPOSITION, ASSOCIATION, DEPENDENCY
     }
 
-//    **********************************************************************************************
-//    Getters and setters
-//    **********************************************************************************************
+    var xOrigin = 0f
+    var yOrigin = 0f
+    var xEnd = 0f
+    var yEnd = 0f
 
-    public UmlClass getRelationOriginClass() {
-        return mRelationOriginClass;
-    }
-
-    public void setRelationOriginClass(UmlClass relationOriginClass) {
-        mRelationOriginClass = relationOriginClass;
-    }
-
-    public UmlClass getRelationEndClass() {
-        return mRelationEndClass;
-    }
-
-    public void setRelationEndClass(UmlClass relationEndClass) {
-        mRelationEndClass = relationEndClass;
-    }
-
-    public UmlRelationType getUmlRelationType() {
-        return mUmlRelationType;
-    }
-
-    public void setUmlRelationType(UmlRelationType umlRelationType) {
-        mUmlRelationType = umlRelationType;
-    }
-
-    public float getXOrigin() {
-        return mXOrigin;
-    }
-
-    public void setXOrigin(float XOrigin) {
-        mXOrigin = XOrigin;
-    }
-
-    public float getYOrigin() {
-        return mYOrigin;
-    }
-
-    public void setYOrigin(float YOrigin) {
-        mYOrigin = YOrigin;
-    }
-
-    public float getXEnd() {
-        return mXEnd;
-    }
-
-    public void setXEnd(float XEnd) {
-        mXEnd = XEnd;
-    }
-
-    public float getYEnd() {
-        return mYEnd;
-    }
-
-    public void setYEnd(float YEnd) {
-        mYEnd = YEnd;
-    }
-
-//    **********************************************************************************************
-//    Test methods
-//    **********************************************************************************************
-
-//    **********************************************************************************************
-//    Other methods
-//    **********************************************************************************************
-
-//    **********************************************************************************************
-//    JSON methods
-//    **********************************************************************************************
-
-    public JSONObject toJSONObject() {
-        JSONObject jsonObject = new JSONObject();
-
-        try {
-            jsonObject.put(JSON_RELATION_TYPE, mUmlRelationType.toString());
-            jsonObject.put(JSON_RELATION_ORIGIN_CLASS, mRelationOriginClass.getName());
-            jsonObject.put(JSON_RELATION_END_CLASS, mRelationEndClass.getName());
-            return jsonObject;
-        } catch (JSONException e) {
-            return null;
+    //    **********************************************************************************************
+    //    Test methods
+    //    **********************************************************************************************
+    //    **********************************************************************************************
+    //    Other methods
+    //    **********************************************************************************************
+    //    **********************************************************************************************
+    //    JSON methods
+    //    **********************************************************************************************
+    fun toJSONObject(): JSONObject? {
+        val jsonObject = JSONObject()
+        return try {
+            jsonObject.put(JSON_RELATION_TYPE, umlRelationType.toString())
+            jsonObject.put(JSON_RELATION_ORIGIN_CLASS, relationOriginClass.getName())
+            jsonObject.put(JSON_RELATION_END_CLASS, relationEndClass.getName())
+            jsonObject
+        } catch (e: JSONException) {
+            null
         }
     }
 
-    public static UmlRelation fromJSONObject(JSONObject jsonObject,UmlProject project) {
-        try {
-            return new UmlRelation(project.getUmlClass(jsonObject.getString(JSON_RELATION_ORIGIN_CLASS)),
+    companion object {
+        const val JSON_RELATION_TYPE = "RelationType"
+        const val JSON_RELATION_ORIGIN_CLASS = "RelationOriginClass"
+        const val JSON_RELATION_END_CLASS = "RelationEndCLass"
+        fun fromJSONObject(jsonObject: JSONObject, project: UmlProject): UmlRelation? {
+            return try {
+                UmlRelation(
+                    project.getUmlClass(jsonObject.getString(JSON_RELATION_ORIGIN_CLASS)),
                     project.getUmlClass(jsonObject.getString(JSON_RELATION_END_CLASS)),
-                    UmlRelationType.valueOf(jsonObject.getString(JSON_RELATION_TYPE)));
-        } catch (JSONException e) {
-            return null;
+                    UmlRelationType.valueOf(jsonObject.getString(JSON_RELATION_TYPE))
+                )
+            } catch (e: JSONException) {
+                null
+            }
         }
     }
-
 }

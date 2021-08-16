@@ -1,933 +1,1035 @@
-package com.nathaniel.motus.umlclasseditor.view;
+package com.nathaniel.motus.umlclasseditor.view
 
-import android.app.AlertDialog;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.res.TypedArray;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.DashPathEffect;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.Typeface;
-import android.util.AttributeSet;
-import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
+import android.view.View.OnTouchListener
+import com.nathaniel.motus.umlclasseditor.view.GraphFragment
+import com.nathaniel.motus.umlclasseditor.model.UmlProject
+import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
+import com.nathaniel.motus.umlclasseditor.model.UmlClass
+import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
+import android.content.res.TypedArray
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation
+import com.nathaniel.motus.umlclasseditor.view.GraphView
+import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
+import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
+import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
+import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
+import android.view.MotionEvent
+import android.content.DialogInterface
+import android.widget.TextView
+import android.widget.ImageButton
+import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
+import com.nathaniel.motus.umlclasseditor.view.EditorFragment
+import android.widget.AdapterView.OnItemLongClickListener
+import android.widget.RadioGroup
+import android.widget.ExpandableListView.OnChildClickListener
+import android.widget.EditText
+import android.widget.RadioButton
+import android.widget.ExpandableListView
+import android.widget.LinearLayout
+import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.AdapterItem
+import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
+import com.nathaniel.motus.umlclasseditor.model.AddItemString
+import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import android.widget.AdapterView
+import android.widget.Toast
+import com.nathaniel.motus.umlclasseditor.model.UmlType
+import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
+import android.widget.CheckBox
+import android.widget.Spinner
+import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.TypeMultiplicity
+import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator
+import android.widget.ArrayAdapter
+import com.nathaniel.motus.umlclasseditor.model.MethodParameter
+import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
+import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
+import org.json.JSONArray
+import org.json.JSONObject
+import org.json.JSONException
+import kotlin.jvm.JvmOverloads
+import android.content.pm.PackageManager
+import android.content.pm.PackageInfo
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.navigation.NavigationView
+import androidx.drawerlayout.widget.DrawerLayout
+import android.widget.FrameLayout
+import androidx.core.view.MenuCompat
+import androidx.annotation.RequiresApi
+import android.os.Build
+import android.content.SharedPreferences
+import android.content.SharedPreferences.Editor
+import com.nathaniel.motus.umlclasseditor.controller.MainActivity
+import androidx.core.view.GravityCompat
+import android.content.Intent
+import android.widget.AbsListView
+import android.util.SparseBooleanArray
+import android.text.Html
+import android.app.Activity
+import android.app.AlertDialog
+import android.content.Context
+import android.graphics.*
+import android.util.AttributeSet
+import android.view.View
+import android.widget.BaseExpandableListAdapter
 
-import androidx.annotation.Nullable;
-
-import com.nathaniel.motus.umlclasseditor.R;
-import com.nathaniel.motus.umlclasseditor.model.UmlClass;
-import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute;
-import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod;
-import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue;
-import com.nathaniel.motus.umlclasseditor.model.UmlProject;
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation;
-
-public class GraphView extends View implements View.OnTouchListener{
-
-    enum TouchMode{DRAG,ZOOM}
-
-    private GraphFragment mGraphFragment;
-    private float mZoom;
-    private float mXOffset;
-    private float mYOffset;
-    private UmlProject mUmlProject;
-    private float mLastTouchX;
-    private float mLastTouchY;
-    private float mOldDist;
-    private float mNewDist;
-    private TouchMode mTouchMode=TouchMode.DRAG;
-    private int mPrimaryPointerIndex;
-    private float mXMidPoint;
-    private float mYMidpoint;
-    private float mOldXMidPoint;
-    private float mOldYMidPoint;
-    private Paint plainTextPaint;
-    private Paint italicTextPaint;
-    private Paint underlinedTextPaint;
-    private Paint linePaint;
-    private Paint dashPaint;
-    private Paint solidBlackPaint;
-    private Paint solidWhitePaint;
-    private UmlClass mMovingClass;
-    private GraphViewObserver mCallback;
-    private long mActionDownEventTime;
-    private long mFirstClickTime=0;
-    private static final long CLICK_DELAY=200;
-    private static final long DOUBLE_CLICK_DELAY=500;
-    private static final float DOUBLE_CLICK_DISTANCE_MAX=10;
-    private float mFirstClickX=0;
-    private float mFirstClickY=0;
-
-//    **********************************************************************************************
-//    Standard drawing dimensions (in dp)
-//    **********************************************************************************************
-
-    private static final float FONT_SIZE=20;
-    private static final float INTERLINE=10;
-    private static final float ARROW_SIZE=10;
-
-
-//    **********************************************************************************************
-//    Constructors
-//    **********************************************************************************************
-
-    public GraphView(Context context) {
-        super(context);
-        init(-1,-1,-1);
+class GraphView : View, OnTouchListener {
+    internal enum class TouchMode {
+        DRAG, ZOOM
     }
 
-    public GraphView(Context context, float zoom, int xOffset, int yOffset) {
-        super(context);
-        init(zoom,xOffset,yOffset);
+    private var mGraphFragment: GraphFragment? = null
+    private var mZoom = 0f
+    private var mXOffset = 0f
+    private var mYOffset = 0f
+    private var mUmlProject: UmlProject? = null
+    private var mLastTouchX = 0f
+    private var mLastTouchY = 0f
+    private var mOldDist = 0f
+    private var mNewDist = 0f
+    private var mTouchMode = TouchMode.DRAG
+    private var mPrimaryPointerIndex = 0
+    private var mXMidPoint = 0f
+    private var mYMidpoint = 0f
+    private var mOldXMidPoint = 0f
+    private var mOldYMidPoint = 0f
+    private var plainTextPaint: Paint? = null
+    private var italicTextPaint: Paint? = null
+    private var underlinedTextPaint: Paint? = null
+    private var linePaint: Paint? = null
+    private var dashPaint: Paint? = null
+    private var solidBlackPaint: Paint? = null
+    private var solidWhitePaint: Paint? = null
+    private var mMovingClass: UmlClass? = null
+    private var mCallback: GraphViewObserver? = null
+    private var mActionDownEventTime: Long = 0
+    private var mFirstClickTime: Long = 0
+    private var mFirstClickX = 0f
+    private var mFirstClickY = 0f
+
+    //    **********************************************************************************************
+    //    Constructors
+    //    **********************************************************************************************
+    constructor(context: Context?) : super(context) {
+        init(-1f, -1, -1)
     }
 
-    public GraphView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init(attrs);
+    constructor(context: Context?, zoom: Float, xOffset: Int, yOffset: Int) : super(context) {
+        init(zoom, xOffset, yOffset)
     }
 
-    public GraphView(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
-        init(attrs);
+    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(
+        context,
+        attrs,
+        defStyleAttr
+    ) {
+        init(attrs)
     }
 
-    private void init(float zoom, int xOffset, int yOffset) {
-        if (zoom!=-1)
-            mZoom=zoom;
-        else
-            mZoom=1;
-
-        if (xOffset!=-1)
-            mXOffset=xOffset;
-        else
-            mXOffset=0;
-
-        if (yOffset!=-1)
-            mYOffset=yOffset;
-        else
-            mYOffset=0;
-
-        plainTextPaint =new Paint();
-        plainTextPaint.setColor(Color.DKGRAY);
-
-        italicTextPaint=new Paint();
-        italicTextPaint.setColor(Color.DKGRAY);
-        italicTextPaint.setTypeface(Typeface.defaultFromStyle(Typeface.ITALIC));
-
-        underlinedTextPaint=new Paint();
-        underlinedTextPaint.setColor(Color.DKGRAY);
-        underlinedTextPaint.setFlags(Paint.UNDERLINE_TEXT_FLAG);
-
-        linePaint =new Paint();
-        linePaint.setColor(Color.DKGRAY);
-        linePaint.setStyle(Paint.Style.STROKE);
-
-        dashPaint=new Paint();
-        dashPaint.setColor(Color.DKGRAY);
-        dashPaint.setStyle(Paint.Style.STROKE);
-        dashPaint.setPathEffect(new DashPathEffect(new float[]{10f,10f},0));
-
-        solidBlackPaint=new Paint();
-        solidBlackPaint.setColor(Color.DKGRAY);
-        solidBlackPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-
-        solidWhitePaint=new Paint();
-        solidWhitePaint.setColor(Color.WHITE);
-        solidWhitePaint.setStyle(Paint.Style.FILL);
-
-        setOnTouchListener(this);
-        createCallbackToParentActivity();
+    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) {
+        init(attrs)
     }
 
-    private void init(AttributeSet attrs) {
-        TypedArray attr=getContext().obtainStyledAttributes(attrs, R.styleable.GraphView);
-        float zoom=attr.getFloat(R.styleable.GraphView_zoom,-1);
-        int xOffset=attr.getInt(R.styleable.GraphView_xOffset,-1);
-        int yOffset=attr.getInt(R.styleable.GraphView_yOffset,-1);
-
-        init(zoom,xOffset,yOffset);
+    private fun init(zoom: Float, xOffset: Int, yOffset: Int) {
+        mZoom = if (zoom != -1f) zoom else 1f
+        mXOffset = if (xOffset != -1) xOffset.toFloat() else 0f
+        mYOffset = if (yOffset != -1) yOffset.toFloat() else 0f
+        plainTextPaint = Paint()
+        plainTextPaint!!.color = Color.DKGRAY
+        italicTextPaint = Paint()
+        italicTextPaint!!.color = Color.DKGRAY
+        italicTextPaint!!.typeface = Typeface.defaultFromStyle(Typeface.ITALIC)
+        underlinedTextPaint = Paint()
+        underlinedTextPaint!!.color = Color.DKGRAY
+        underlinedTextPaint!!.flags = Paint.UNDERLINE_TEXT_FLAG
+        linePaint = Paint()
+        linePaint!!.color = Color.DKGRAY
+        linePaint!!.style = Paint.Style.STROKE
+        dashPaint = Paint()
+        dashPaint!!.color = Color.DKGRAY
+        dashPaint!!.style = Paint.Style.STROKE
+        dashPaint!!.pathEffect = DashPathEffect(floatArrayOf(10f, 10f), 0)
+        solidBlackPaint = Paint()
+        solidBlackPaint!!.color = Color.DKGRAY
+        solidBlackPaint!!.style = Paint.Style.FILL_AND_STROKE
+        solidWhitePaint = Paint()
+        solidWhitePaint!!.color = Color.WHITE
+        solidWhitePaint!!.style = Paint.Style.FILL
+        setOnTouchListener(this)
+        createCallbackToParentActivity()
     }
 
-//    **********************************************************************************************
-//    Callback interface
-//    **********************************************************************************************
-
-    public interface GraphViewObserver{
-        public boolean isExpectingTouchLocation();
-        public void createClass(float xLocation, float yLocation);
-        public void editClass(UmlClass umlClass);
-        public void createRelation(UmlClass startClass, UmlClass endClass, UmlRelation.UmlRelationType relationType);
+    private fun init(attrs: AttributeSet?) {
+        val attr = context.obtainStyledAttributes(attrs, R.styleable.GraphView)
+        val zoom = attr.getFloat(R.styleable.GraphView_zoom, -1f)
+        val xOffset = attr.getInt(R.styleable.GraphView_xOffset, -1)
+        val yOffset = attr.getInt(R.styleable.GraphView_yOffset, -1)
+        init(zoom, xOffset, yOffset)
     }
 
-//    **********************************************************************************************
-//    Getters and setter
-//    **********************************************************************************************
-
-    public void setUmlProject(UmlProject umlProject) {
-        mUmlProject = umlProject;
-        mZoom=mUmlProject.getZoom();
-        mXOffset=mUmlProject.getXOffset();
-        mYOffset=mUmlProject.getYOffset();
-        this.invalidate();
+    //    **********************************************************************************************
+    //    Callback interface
+    //    **********************************************************************************************
+    interface GraphViewObserver {
+        val isExpectingTouchLocation: Boolean
+        fun createClass(xLocation: Float, yLocation: Float)
+        fun editClass(umlClass: UmlClass?)
+        fun createRelation(
+            startClass: UmlClass?,
+            endClass: UmlClass?,
+            relationType: UmlRelationType?
+        )
     }
 
-    public void setGraphFragment(GraphFragment graphFragment) {
-        mGraphFragment = graphFragment;
+    //    **********************************************************************************************
+    //    Getters and setter
+    //    **********************************************************************************************
+    fun setUmlProject(umlProject: UmlProject?) {
+        mUmlProject = umlProject
+        mZoom = mUmlProject.getZoom()
+        mXOffset = mUmlProject.getXOffset()
+        mYOffset = mUmlProject.getYOffset()
+        this.invalidate()
     }
 
-    public void setZoom(float zoom) {
-        mZoom = zoom;
+    fun setGraphFragment(graphFragment: GraphFragment?) {
+        mGraphFragment = graphFragment
     }
 
-    public void setXOffset(float XOffset) {
-        mXOffset = XOffset;
+    fun setZoom(zoom: Float) {
+        mZoom = zoom
     }
 
-    public void setYOffset(float YOffset) {
-        mYOffset = YOffset;
+    fun setXOffset(XOffset: Float) {
+        mXOffset = XOffset
     }
 
-//    **********************************************************************************************
-//    Overridden methods
-//    **********************************************************************************************
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-
-        updateProjectGeometricalParameters();
-
-        for (UmlClass c : mUmlProject.getUmlClasses())
-            drawUmlClass(canvas, c);
-
-        for (UmlRelation r : mUmlProject.getUmlRelations())
-            drawRelation(canvas, r);
+    fun setYOffset(YOffset: Float) {
+        mYOffset = YOffset
     }
 
-//    **********************************************************************************************
-//    Drawing methods
-//    **********************************************************************************************
+    //    **********************************************************************************************
+    //    Overridden methods
+    //    **********************************************************************************************
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        updateProjectGeometricalParameters()
+        for (c in mUmlProject.getUmlClasses()) drawUmlClass(canvas, c)
+        for (r in mUmlProject.getUmlRelations()) drawRelation(canvas, r)
+    }
 
-    public void drawUmlClass(Canvas canvas,UmlClass umlClass) {
-
-        plainTextPaint.setTextSize(FONT_SIZE*mZoom);
-        italicTextPaint.setTextSize(FONT_SIZE*mZoom);
-        underlinedTextPaint.setTextSize(FONT_SIZE*mZoom);
+    //    **********************************************************************************************
+    //    Drawing methods
+    //    **********************************************************************************************
+    fun drawUmlClass(canvas: Canvas, umlClass: UmlClass?) {
+        plainTextPaint!!.textSize = FONT_SIZE * mZoom
+        italicTextPaint!!.textSize = FONT_SIZE * mZoom
+        underlinedTextPaint!!.textSize = FONT_SIZE * mZoom
 
         //Update class dimensions
-        updateUmlClassNormalDimensions(umlClass);
-
-        drawUmlClassHeader(canvas,umlClass);
-        if (umlClass.getUmlClassType()== UmlClass.UmlClassType.ENUM)
-            drawValueBox(canvas,umlClass);
-        else {
-            drawAttributeBox(canvas, umlClass);
-            drawMethodBox(canvas, umlClass);
+        updateUmlClassNormalDimensions(umlClass)
+        drawUmlClassHeader(canvas, umlClass)
+        if (umlClass.getUmlClassType() == UmlClassType.ENUM) drawValueBox(canvas, umlClass) else {
+            drawAttributeBox(canvas, umlClass)
+            drawMethodBox(canvas, umlClass)
         }
     }
 
-    private void drawUmlClassHeader(Canvas canvas, UmlClass umlClass) {
-        canvas.drawRect(visibleX(umlClass.getUmlClassNormalXPos()),
-                visibleY(umlClass.getUmlClassNormalYPos()),
-                visibleX(umlClass.getUmlClassNormalXPos()+umlClass.getUmlClassNormalWidth()),
-                visibleY(umlClass.getUmlClassNormalYPos()+getClassHeaderNormalHeight(umlClass)),
-                linePaint);
-
-        switch (umlClass.getUmlClassType()) {
-            case INTERFACE:
-                canvas.drawText("<< Interface >>",
-                        visibleX(umlClass.getUmlClassNormalXPos()+(umlClass.getUmlClassNormalWidth()-getTextNormalWidth("<< Interface >>"))/2),
-                        visibleY(umlClass.getUmlClassNormalYPos()+FONT_SIZE+INTERLINE),
-                        plainTextPaint);
-                canvas.drawText(umlClass.getName(),
-                        visibleX(umlClass.getUmlClassNormalXPos()+(umlClass.getUmlClassNormalWidth()-getTextNormalWidth(umlClass.getName()))/2),
-                        visibleY(umlClass.getUmlClassNormalYPos()+FONT_SIZE*2+INTERLINE*2),
-                        plainTextPaint);
-                break;
-            case ABSTRACT_CLASS:
-                canvas.drawText(umlClass.getName(),
-                        visibleX(umlClass.getUmlClassNormalXPos()+(umlClass.getUmlClassNormalWidth()-getTextNormalWidth(umlClass.getName()))/2),
-                        visibleY(umlClass.getUmlClassNormalYPos()+FONT_SIZE+INTERLINE),
-                        italicTextPaint);
-                break;
-            default:
-                canvas.drawText(umlClass.getName(),
-                        visibleX(umlClass.getUmlClassNormalXPos()+(umlClass.getUmlClassNormalWidth()-getTextNormalWidth(umlClass.getName()))/2),
-                        visibleY(umlClass.getUmlClassNormalYPos()+FONT_SIZE+INTERLINE),
-                        plainTextPaint);
+    private fun drawUmlClassHeader(canvas: Canvas, umlClass: UmlClass?) {
+        canvas.drawRect(
+            visibleX(umlClass.getUmlClassNormalXPos()),
+            visibleY(umlClass.getUmlClassNormalYPos()),
+            visibleX(umlClass.getUmlClassNormalXPos() + umlClass.getUmlClassNormalWidth()),
+            visibleY(umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass)),
+            linePaint!!
+        )
+        when (umlClass.getUmlClassType()) {
+            UmlClassType.INTERFACE -> {
+                canvas.drawText(
+                    "<< Interface >>",
+                    visibleX(
+                        umlClass.getUmlClassNormalXPos() + (umlClass.getUmlClassNormalWidth() - getTextNormalWidth(
+                            "<< Interface >>"
+                        )) / 2
+                    ),
+                    visibleY(umlClass.getUmlClassNormalYPos() + FONT_SIZE + INTERLINE),
+                    plainTextPaint!!
+                )
+                canvas.drawText(
+                    umlClass.getName(),
+                    visibleX(
+                        umlClass.getUmlClassNormalXPos() + (umlClass.getUmlClassNormalWidth() - getTextNormalWidth(
+                            umlClass.getName()
+                        )) / 2
+                    ),
+                    visibleY(umlClass.getUmlClassNormalYPos() + FONT_SIZE * 2 + INTERLINE * 2),
+                    plainTextPaint!!
+                )
+            }
+            UmlClassType.ABSTRACT_CLASS -> canvas.drawText(
+                umlClass.getName(),
+                visibleX(
+                    umlClass.getUmlClassNormalXPos() + (umlClass.getUmlClassNormalWidth() - getTextNormalWidth(
+                        umlClass.getName()
+                    )) / 2
+                ),
+                visibleY(umlClass.getUmlClassNormalYPos() + FONT_SIZE + INTERLINE),
+                italicTextPaint!!
+            )
+            else -> canvas.drawText(
+                umlClass.getName(),
+                visibleX(
+                    umlClass.getUmlClassNormalXPos() + (umlClass.getUmlClassNormalWidth() - getTextNormalWidth(
+                        umlClass.getName()
+                    )) / 2
+                ),
+                visibleY(umlClass.getUmlClassNormalYPos() + FONT_SIZE + INTERLINE),
+                plainTextPaint!!
+            )
         }
     }
 
-    private void drawAttributeBox(Canvas canvas, UmlClass umlClass) {
-        canvas.drawRect(visibleX(umlClass.getUmlClassNormalXPos()),
-                visibleY(umlClass.getUmlClassNormalYPos()+getClassHeaderNormalHeight(umlClass)),
-                visibleX(umlClass.getUmlClassNormalXPos()+umlClass.getUmlClassNormalWidth()),
-                visibleY(umlClass.getUmlClassNormalYPos()+getClassHeaderNormalHeight(umlClass)+getAttributeBoxNormalHeight(umlClass)),
-                linePaint);
-
-        float currentY=umlClass.getUmlClassNormalYPos()+getClassHeaderNormalHeight(umlClass)+INTERLINE+FONT_SIZE;
-        for (UmlClassAttribute a : umlClass.getAttributes()) {
-            if (a.isStatic()) canvas.drawText(a.getAttributeCompleteString(),
-                    visibleX(umlClass.getUmlClassNormalXPos()+INTERLINE),
-                    visibleY(currentY),
-                    underlinedTextPaint);
-            else canvas.drawText(a.getAttributeCompleteString(),
-                    visibleX(umlClass.getUmlClassNormalXPos()+INTERLINE),
-                    visibleY(currentY),
-                    plainTextPaint);
-            currentY=currentY+FONT_SIZE+INTERLINE;
+    private fun drawAttributeBox(canvas: Canvas, umlClass: UmlClass?) {
+        canvas.drawRect(
+            visibleX(umlClass.getUmlClassNormalXPos()),
+            visibleY(umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass)),
+            visibleX(umlClass.getUmlClassNormalXPos() + umlClass.getUmlClassNormalWidth()),
+            visibleY(
+                umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
+                    umlClass
+                )
+            ),
+            linePaint!!
+        )
+        var currentY =
+            umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + INTERLINE + FONT_SIZE
+        for (a in umlClass.getAttributes()) {
+            if (a!!.isStatic) canvas.drawText(
+                a.attributeCompleteString,
+                visibleX(umlClass.getUmlClassNormalXPos() + INTERLINE),
+                visibleY(currentY),
+                underlinedTextPaint!!
+            ) else canvas.drawText(
+                a.attributeCompleteString,
+                visibleX(umlClass.getUmlClassNormalXPos() + INTERLINE),
+                visibleY(currentY),
+                plainTextPaint!!
+            )
+            currentY = currentY + FONT_SIZE + INTERLINE
         }
     }
 
-    private void drawMethodBox(Canvas canvas, UmlClass umlClass) {
-        canvas.drawRect(visibleX(umlClass.getUmlClassNormalXPos()),
-                visibleY(umlClass.getUmlClassNormalYPos()+getClassHeaderNormalHeight(umlClass)+getAttributeBoxNormalHeight(umlClass)),
-                visibleX(umlClass.getUmlClassNormalXPos()+umlClass.getUmlClassNormalWidth()),
-                visibleY(umlClass.getUmlClassNormalYPos()+getClassHeaderNormalHeight(umlClass)+getAttributeBoxNormalHeight(umlClass)+getMethodBoxNormalHeight(umlClass)),
-                linePaint);
-
-        float currentY=umlClass.getUmlClassNormalYPos()+getClassHeaderNormalHeight(umlClass)+getAttributeBoxNormalHeight(umlClass)+INTERLINE+FONT_SIZE;
-        for (UmlClassMethod m : umlClass.getMethods()) {
-            if (m.isStatic()) canvas.drawText(m.getMethodCompleteString(),
-                    visibleX(umlClass.getUmlClassNormalXPos()+INTERLINE),
-                    visibleY(currentY),
-                    underlinedTextPaint);
-            else canvas.drawText(m.getMethodCompleteString(),
-                    visibleX(umlClass.getUmlClassNormalXPos()+INTERLINE),
-                    visibleY(currentY),
-                    plainTextPaint);
-            currentY=currentY+FONT_SIZE+INTERLINE;
+    private fun drawMethodBox(canvas: Canvas, umlClass: UmlClass?) {
+        canvas.drawRect(
+            visibleX(umlClass.getUmlClassNormalXPos()),
+            visibleY(
+                umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
+                    umlClass
+                )
+            ),
+            visibleX(umlClass.getUmlClassNormalXPos() + umlClass.getUmlClassNormalWidth()),
+            visibleY(
+                umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
+                    umlClass
+                ) + getMethodBoxNormalHeight(umlClass)
+            ),
+            linePaint!!
+        )
+        var currentY =
+            umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
+                umlClass
+            ) + INTERLINE + FONT_SIZE
+        for (m in umlClass.getMethods()) {
+            if (m!!.isStatic) canvas.drawText(
+                m.methodCompleteString,
+                visibleX(umlClass.getUmlClassNormalXPos() + INTERLINE),
+                visibleY(currentY),
+                underlinedTextPaint!!
+            ) else canvas.drawText(
+                m.methodCompleteString,
+                visibleX(umlClass.getUmlClassNormalXPos() + INTERLINE),
+                visibleY(currentY),
+                plainTextPaint!!
+            )
+            currentY = currentY + FONT_SIZE + INTERLINE
         }
     }
 
-    private void drawValueBox(Canvas canvas, UmlClass umlClass) {
-        canvas.drawRect(visibleX(umlClass.getUmlClassNormalXPos()),
-                visibleY(umlClass.getUmlClassNormalYPos()+getClassHeaderNormalHeight(umlClass)),
-                visibleX(umlClass.getUmlClassNormalXPos()+umlClass.getUmlClassNormalWidth()),
-                visibleY(umlClass.getUmlClassNormalYPos()+getClassHeaderNormalHeight(umlClass)+getValueBoxNormalHeight(umlClass)),
-                linePaint);
-
-        float currentY=umlClass.getUmlClassNormalYPos()+getClassHeaderNormalHeight(umlClass)+INTERLINE+FONT_SIZE;
-        for (UmlEnumValue v : umlClass.getValues()) {
-            canvas.drawText(v.getName(),
-                    visibleX(umlClass.getUmlClassNormalXPos()+INTERLINE),
-                    visibleY(currentY),
-                    plainTextPaint);
-            currentY=currentY+FONT_SIZE+INTERLINE;
+    private fun drawValueBox(canvas: Canvas, umlClass: UmlClass?) {
+        canvas.drawRect(
+            visibleX(umlClass.getUmlClassNormalXPos()),
+            visibleY(umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass)),
+            visibleX(umlClass.getUmlClassNormalXPos() + umlClass.getUmlClassNormalWidth()),
+            visibleY(
+                umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + getValueBoxNormalHeight(
+                    umlClass
+                )
+            ),
+            linePaint!!
+        )
+        var currentY =
+            umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + INTERLINE + FONT_SIZE
+        for (v in umlClass.getValues()) {
+            canvas.drawText(
+                v.name,
+                visibleX(umlClass.getUmlClassNormalXPos() + INTERLINE),
+                visibleY(currentY),
+                plainTextPaint!!
+            )
+            currentY = currentY + FONT_SIZE + INTERLINE
         }
     }
 
-    private void drawRelation(Canvas canvas,UmlRelation umlRelation) {
-
-        float originAbsoluteLeft=umlRelation.getRelationOriginClass().getUmlClassNormalXPos();
-        float originAbsoluteRight=umlRelation.getRelationOriginClass().getNormalRightEnd();
-        float originAbsoluteTop=umlRelation.getRelationOriginClass().getUmlClassNormalYPos();
-        float originAbsoluteBottom=umlRelation.getRelationOriginClass().getNormalBottomEnd();
-        float endAbsoluteLeft=umlRelation.getRelationEndClass().getUmlClassNormalXPos();
-        float endAbsoluteRight=umlRelation.getRelationEndClass().getNormalRightEnd();
-        float endAbsoluteTop=umlRelation.getRelationEndClass().getUmlClassNormalYPos();
-        float endAbsoluteBottom=umlRelation.getRelationEndClass().getNormalBottomEnd();
-        float absoluteXOrigin=0;
-        float absoluteYOrigin=0;
-        float absoluteXEnd=0;
-        float absoluteYEnd=0;
+    private fun drawRelation(canvas: Canvas, umlRelation: UmlRelation?) {
+        val originAbsoluteLeft = umlRelation.getRelationOriginClass().umlClassNormalXPos
+        val originAbsoluteRight = umlRelation.getRelationOriginClass().normalRightEnd
+        val originAbsoluteTop = umlRelation.getRelationOriginClass().umlClassNormalYPos
+        val originAbsoluteBottom = umlRelation.getRelationOriginClass().normalBottomEnd
+        val endAbsoluteLeft = umlRelation.getRelationEndClass().umlClassNormalXPos
+        val endAbsoluteRight = umlRelation.getRelationEndClass().normalRightEnd
+        val endAbsoluteTop = umlRelation.getRelationEndClass().umlClassNormalYPos
+        val endAbsoluteBottom = umlRelation.getRelationEndClass().normalBottomEnd
+        var absoluteXOrigin = 0f
+        var absoluteYOrigin = 0f
+        var absoluteXEnd = 0f
+        var absoluteYEnd = 0f
 
         //End in South quarter of Origin
         if (umlRelation.getRelationEndClass().isSouthOf(umlRelation.getRelationOriginClass())) {
-            float lowerXLimit= originAbsoluteLeft-endAbsoluteTop+originAbsoluteBottom-umlRelation.getRelationEndClass().getUmlClassNormalWidth();
-            float upperXLimit=originAbsoluteRight+endAbsoluteTop-originAbsoluteBottom;
-
-            absoluteXEnd=endAbsoluteRight-
-                   umlRelation.getRelationEndClass().getUmlClassNormalWidth()/(upperXLimit-lowerXLimit)*
-                           (endAbsoluteLeft-lowerXLimit);
-            absoluteYEnd=endAbsoluteTop;
-
-            absoluteXOrigin=originAbsoluteLeft+
-                   umlRelation.getRelationOriginClass().getUmlClassNormalWidth()/(upperXLimit-lowerXLimit)*
-                           (endAbsoluteLeft-lowerXLimit);
-
-            absoluteYOrigin=originAbsoluteBottom;
+            val lowerXLimit =
+                originAbsoluteLeft - endAbsoluteTop + originAbsoluteBottom - umlRelation.getRelationEndClass().umlClassNormalWidth
+            val upperXLimit = originAbsoluteRight + endAbsoluteTop - originAbsoluteBottom
+            absoluteXEnd = endAbsoluteRight -
+                    umlRelation.getRelationEndClass().umlClassNormalWidth / (upperXLimit - lowerXLimit) *
+                    (endAbsoluteLeft - lowerXLimit)
+            absoluteYEnd = endAbsoluteTop
+            absoluteXOrigin = originAbsoluteLeft +
+                    umlRelation.getRelationOriginClass().umlClassNormalWidth / (upperXLimit - lowerXLimit) *
+                    (endAbsoluteLeft - lowerXLimit)
+            absoluteYOrigin = originAbsoluteBottom
         }
 
         //End in North quarter or Origin
         if (umlRelation.getRelationEndClass().isNorthOf(umlRelation.getRelationOriginClass())) {
-            float lowerXLimit=originAbsoluteLeft-originAbsoluteTop+endAbsoluteBottom-umlRelation.getRelationEndClass().getUmlClassNormalWidth();
-            float upperXLimit=originAbsoluteRight+originAbsoluteTop-endAbsoluteBottom;
-
-            absoluteXEnd=endAbsoluteRight-
-                    umlRelation.getRelationEndClass().getUmlClassNormalWidth()/(upperXLimit-lowerXLimit)*
-                            (endAbsoluteLeft-lowerXLimit);
-
-            absoluteYEnd=endAbsoluteBottom;
-
-            absoluteXOrigin=originAbsoluteLeft+
-                    umlRelation.getRelationOriginClass().getUmlClassNormalWidth()/(upperXLimit-lowerXLimit)*
-                            (endAbsoluteLeft-lowerXLimit);
-
-            absoluteYOrigin=originAbsoluteTop;
+            val lowerXLimit =
+                originAbsoluteLeft - originAbsoluteTop + endAbsoluteBottom - umlRelation.getRelationEndClass().umlClassNormalWidth
+            val upperXLimit = originAbsoluteRight + originAbsoluteTop - endAbsoluteBottom
+            absoluteXEnd = endAbsoluteRight -
+                    umlRelation.getRelationEndClass().umlClassNormalWidth / (upperXLimit - lowerXLimit) *
+                    (endAbsoluteLeft - lowerXLimit)
+            absoluteYEnd = endAbsoluteBottom
+            absoluteXOrigin = originAbsoluteLeft +
+                    umlRelation.getRelationOriginClass().umlClassNormalWidth / (upperXLimit - lowerXLimit) *
+                    (endAbsoluteLeft - lowerXLimit)
+            absoluteYOrigin = originAbsoluteTop
         }
 
         //End in West quarter of Origin
         if (umlRelation.getRelationEndClass().isWestOf(umlRelation.getRelationOriginClass())) {
-            float lowerYLimit=originAbsoluteTop-originAbsoluteLeft+endAbsoluteRight-umlRelation.getRelationEndClass().getUmlClassNormalHeight();
-            float upperYLimit=originAbsoluteBottom+originAbsoluteLeft-endAbsoluteRight;
-
-            absoluteXEnd=endAbsoluteRight;
-
-            absoluteYEnd=endAbsoluteBottom-
-                    umlRelation.getRelationEndClass().getUmlClassNormalHeight()/(upperYLimit-lowerYLimit)*
-                            (endAbsoluteTop-lowerYLimit);
-
-            absoluteXOrigin=originAbsoluteLeft;
-
-            absoluteYOrigin=originAbsoluteTop+
-                    umlRelation.getRelationOriginClass().getUmlClassNormalHeight()/(upperYLimit-lowerYLimit)*
-                            (endAbsoluteTop-lowerYLimit);
+            val lowerYLimit =
+                originAbsoluteTop - originAbsoluteLeft + endAbsoluteRight - umlRelation.getRelationEndClass().umlClassNormalHeight
+            val upperYLimit = originAbsoluteBottom + originAbsoluteLeft - endAbsoluteRight
+            absoluteXEnd = endAbsoluteRight
+            absoluteYEnd = endAbsoluteBottom -
+                    umlRelation.getRelationEndClass().umlClassNormalHeight / (upperYLimit - lowerYLimit) *
+                    (endAbsoluteTop - lowerYLimit)
+            absoluteXOrigin = originAbsoluteLeft
+            absoluteYOrigin = originAbsoluteTop +
+                    umlRelation.getRelationOriginClass().umlClassNormalHeight / (upperYLimit - lowerYLimit) *
+                    (endAbsoluteTop - lowerYLimit)
         }
 
         //End in East quarter of Origin
         if (umlRelation.getRelationEndClass().isEastOf(umlRelation.getRelationOriginClass())) {
-            float lowerYLimit=originAbsoluteTop-endAbsoluteLeft+originAbsoluteRight-umlRelation.getRelationEndClass().getUmlClassNormalHeight();
-            float upperYLimit=originAbsoluteBottom+endAbsoluteLeft-originAbsoluteRight;
-
-            absoluteXEnd=endAbsoluteLeft;
-
-            absoluteYEnd=endAbsoluteBottom-
-                    umlRelation.getRelationEndClass().getUmlClassNormalHeight()/(upperYLimit-lowerYLimit)*
-                            (endAbsoluteTop-lowerYLimit);
-
-            absoluteXOrigin=originAbsoluteRight;
-
-            absoluteYOrigin=originAbsoluteTop+
-                    umlRelation.getRelationOriginClass().getUmlClassNormalHeight()/(upperYLimit-lowerYLimit)*
-                            (endAbsoluteTop-lowerYLimit);
+            val lowerYLimit =
+                originAbsoluteTop - endAbsoluteLeft + originAbsoluteRight - umlRelation.getRelationEndClass().umlClassNormalHeight
+            val upperYLimit = originAbsoluteBottom + endAbsoluteLeft - originAbsoluteRight
+            absoluteXEnd = endAbsoluteLeft
+            absoluteYEnd = endAbsoluteBottom -
+                    umlRelation.getRelationEndClass().umlClassNormalHeight / (upperYLimit - lowerYLimit) *
+                    (endAbsoluteTop - lowerYLimit)
+            absoluteXOrigin = originAbsoluteRight
+            absoluteYOrigin = originAbsoluteTop +
+                    umlRelation.getRelationOriginClass().umlClassNormalHeight / (upperYLimit - lowerYLimit) *
+                    (endAbsoluteTop - lowerYLimit)
         }
         //update relation coordinates
-        umlRelation.setXOrigin(absoluteXOrigin);
-        umlRelation.setYOrigin(absoluteYOrigin);
-        umlRelation.setXEnd(absoluteXEnd);
-        umlRelation.setYEnd(absoluteYEnd);
-
-        Path path=new Path();
-        path.moveTo(visibleX(absoluteXOrigin),visibleY(absoluteYOrigin));
-        path.lineTo(visibleX(absoluteXEnd),visibleY(absoluteYEnd));
-
-        switch (umlRelation.getUmlRelationType()) {
-            case INHERITANCE:
-                canvas.drawPath(path,linePaint);
-                drawSolidWhiteArrow(canvas,
-                        visibleX(absoluteXOrigin),
-                        visibleY(absoluteYOrigin),
-                        visibleX(absoluteXEnd),
-                        visibleY(absoluteYEnd));
-                break;
-
-            case ASSOCIATION:
-                canvas.drawPath(path,linePaint);
-                break;
-
-            case AGGREGATION:
-                canvas.drawPath(path,linePaint);
-                drawSolidWhiteRhombus(canvas,
-                        visibleX(absoluteXOrigin),
-                        visibleY(absoluteYOrigin),
-                        visibleX(absoluteXEnd),
-                        visibleY(absoluteYEnd));
-                break;
-
-            case COMPOSITION:
-                canvas.drawPath(path,linePaint);
-                drawSolidBlackRhombus(canvas,
-                        visibleX(absoluteXOrigin),
-                        visibleY(absoluteYOrigin),
-                        visibleX(absoluteXEnd),
-                        visibleY(absoluteYEnd));
-                break;
-
-            case DEPENDENCY:
-                canvas.drawPath(path,dashPaint);
-                drawArrow(canvas,
-                        visibleX(absoluteXOrigin),
-                        visibleY(absoluteYOrigin),
-                        visibleX(absoluteXEnd),
-                        visibleY(absoluteYEnd));
-                break;
-
-            case REALIZATION:
-                canvas.drawPath(path,dashPaint);
-                drawSolidWhiteArrow(canvas,
-                        visibleX(absoluteXOrigin),
-                        visibleY(absoluteYOrigin),
-                        visibleX(absoluteXEnd),
-                        visibleY(absoluteYEnd));
-                break;
-
-            default:
-                break;
+        umlRelation.setXOrigin(absoluteXOrigin)
+        umlRelation.setYOrigin(absoluteYOrigin)
+        umlRelation.setXEnd(absoluteXEnd)
+        umlRelation.setYEnd(absoluteYEnd)
+        val path = Path()
+        path.moveTo(visibleX(absoluteXOrigin), visibleY(absoluteYOrigin))
+        path.lineTo(visibleX(absoluteXEnd), visibleY(absoluteYEnd))
+        when (umlRelation.getUmlRelationType()) {
+            UmlRelationType.INHERITANCE -> {
+                canvas.drawPath(path, linePaint!!)
+                drawSolidWhiteArrow(
+                    canvas,
+                    visibleX(absoluteXOrigin),
+                    visibleY(absoluteYOrigin),
+                    visibleX(absoluteXEnd),
+                    visibleY(absoluteYEnd)
+                )
+            }
+            UmlRelationType.ASSOCIATION -> canvas.drawPath(path, linePaint!!)
+            UmlRelationType.AGGREGATION -> {
+                canvas.drawPath(path, linePaint!!)
+                drawSolidWhiteRhombus(
+                    canvas,
+                    visibleX(absoluteXOrigin),
+                    visibleY(absoluteYOrigin),
+                    visibleX(absoluteXEnd),
+                    visibleY(absoluteYEnd)
+                )
+            }
+            UmlRelationType.COMPOSITION -> {
+                canvas.drawPath(path, linePaint!!)
+                drawSolidBlackRhombus(
+                    canvas,
+                    visibleX(absoluteXOrigin),
+                    visibleY(absoluteYOrigin),
+                    visibleX(absoluteXEnd),
+                    visibleY(absoluteYEnd)
+                )
+            }
+            UmlRelationType.DEPENDENCY -> {
+                canvas.drawPath(path, dashPaint!!)
+                drawArrow(
+                    canvas,
+                    visibleX(absoluteXOrigin),
+                    visibleY(absoluteYOrigin),
+                    visibleX(absoluteXEnd),
+                    visibleY(absoluteYEnd)
+                )
+            }
+            UmlRelationType.REALIZATION -> {
+                canvas.drawPath(path, dashPaint!!)
+                drawSolidWhiteArrow(
+                    canvas,
+                    visibleX(absoluteXOrigin),
+                    visibleY(absoluteYOrigin),
+                    visibleX(absoluteXEnd),
+                    visibleY(absoluteYEnd)
+                )
+            }
+            else -> {
+            }
         }
     }
 
-    private void drawArrow(Canvas canvas,float xOrigin, float yOrigin, float xEnd, float yEnd) {
+    private fun drawArrow(
+        canvas: Canvas,
+        xOrigin: Float,
+        yOrigin: Float,
+        xEnd: Float,
+        yEnd: Float
+    ) {
         //draw an arrow at the end of the segment
-
-        canvas.save();
-        canvas.rotate(getAngle(xEnd,yEnd,xOrigin,yOrigin),xEnd,yEnd);
-        Path path=new Path();
-        path.moveTo(xEnd+ARROW_SIZE*mZoom,yEnd-ARROW_SIZE*1.414f/2f*mZoom);
-        path.lineTo(xEnd,yEnd);
-        path.lineTo(xEnd+ARROW_SIZE*mZoom,yEnd+ARROW_SIZE*1.414f/2f*mZoom);
-        canvas.drawPath(path,linePaint);
-        canvas.restore();
+        canvas.save()
+        canvas.rotate(getAngle(xEnd, yEnd, xOrigin, yOrigin), xEnd, yEnd)
+        val path = Path()
+        path.moveTo(xEnd + ARROW_SIZE * mZoom, yEnd - ARROW_SIZE * 1.414f / 2f * mZoom)
+        path.lineTo(xEnd, yEnd)
+        path.lineTo(xEnd + ARROW_SIZE * mZoom, yEnd + ARROW_SIZE * 1.414f / 2f * mZoom)
+        canvas.drawPath(path, linePaint!!)
+        canvas.restore()
     }
 
-    private void drawSolidWhiteArrow(Canvas canvas,float xOrigin, float yOrigin, float xEnd, float yEnd) {
+    private fun drawSolidWhiteArrow(
+        canvas: Canvas,
+        xOrigin: Float,
+        yOrigin: Float,
+        xEnd: Float,
+        yEnd: Float
+    ) {
         //draw a solid white arrow at the end of the segment
-
-        canvas.save();
-        canvas.rotate(getAngle(xEnd,yEnd,xOrigin,yOrigin),xEnd,yEnd);
-        Path path=new Path();
-        path.moveTo(xEnd,yEnd);
-        path.lineTo(xEnd+ARROW_SIZE*mZoom,yEnd-ARROW_SIZE*1.414f/2f*mZoom);
-        path.lineTo(xEnd+ARROW_SIZE*mZoom,yEnd+ARROW_SIZE*1.414f/2f*mZoom);
-        path.close();
-        canvas.drawPath(path,solidWhitePaint);
-        canvas.drawPath(path,linePaint);
-        canvas.restore();
+        canvas.save()
+        canvas.rotate(getAngle(xEnd, yEnd, xOrigin, yOrigin), xEnd, yEnd)
+        val path = Path()
+        path.moveTo(xEnd, yEnd)
+        path.lineTo(xEnd + ARROW_SIZE * mZoom, yEnd - ARROW_SIZE * 1.414f / 2f * mZoom)
+        path.lineTo(xEnd + ARROW_SIZE * mZoom, yEnd + ARROW_SIZE * 1.414f / 2f * mZoom)
+        path.close()
+        canvas.drawPath(path, solidWhitePaint!!)
+        canvas.drawPath(path, linePaint!!)
+        canvas.restore()
     }
 
-    private void drawSolidWhiteRhombus(Canvas canvas, float xOrigin, float yOrigin, float xEnd, float yEnd) {
+    private fun drawSolidWhiteRhombus(
+        canvas: Canvas,
+        xOrigin: Float,
+        yOrigin: Float,
+        xEnd: Float,
+        yEnd: Float
+    ) {
         //draw a solid white rhombus at the end of the segment
-
-        canvas.save();
-        canvas.rotate(getAngle(xEnd,yEnd,xOrigin,yOrigin),xEnd,yEnd);
-        Path path=new Path();
-        path.moveTo(xEnd,yEnd);
-        path.lineTo(xEnd+ARROW_SIZE*mZoom,yEnd-ARROW_SIZE*1.414f/2f*mZoom);
-        path.lineTo(xEnd+ARROW_SIZE*2f*mZoom,yEnd);
-        path.lineTo(xEnd+ARROW_SIZE*mZoom,yEnd+ARROW_SIZE*1.414f/2f*mZoom);
-        path.close();
-        canvas.drawPath(path,solidWhitePaint);
-        canvas.drawPath(path,linePaint);
-        canvas.restore();
+        canvas.save()
+        canvas.rotate(getAngle(xEnd, yEnd, xOrigin, yOrigin), xEnd, yEnd)
+        val path = Path()
+        path.moveTo(xEnd, yEnd)
+        path.lineTo(xEnd + ARROW_SIZE * mZoom, yEnd - ARROW_SIZE * 1.414f / 2f * mZoom)
+        path.lineTo(xEnd + ARROW_SIZE * 2f * mZoom, yEnd)
+        path.lineTo(xEnd + ARROW_SIZE * mZoom, yEnd + ARROW_SIZE * 1.414f / 2f * mZoom)
+        path.close()
+        canvas.drawPath(path, solidWhitePaint!!)
+        canvas.drawPath(path, linePaint!!)
+        canvas.restore()
     }
 
-    private void drawSolidBlackRhombus(Canvas canvas, float xOrigin, float yOrigin, float xEnd, float yEnd) {
+    private fun drawSolidBlackRhombus(
+        canvas: Canvas,
+        xOrigin: Float,
+        yOrigin: Float,
+        xEnd: Float,
+        yEnd: Float
+    ) {
         //draw a solid black rhombus at the end of the segment
-
-        canvas.save();
-        canvas.rotate(getAngle(xEnd,yEnd,xOrigin,yOrigin),xEnd,yEnd);
-        Path path=new Path();
-        path.moveTo(xEnd,yEnd);
-        path.lineTo(xEnd+ARROW_SIZE*mZoom,yEnd-ARROW_SIZE*1.414f/2f*mZoom);
-        path.lineTo(xEnd+ARROW_SIZE*2f*mZoom,yEnd);
-        path.lineTo(xEnd+ARROW_SIZE*mZoom,yEnd+ARROW_SIZE*1.414f/2f*mZoom);
-        path.close();
-        canvas.drawPath(path,solidBlackPaint);
-        canvas.restore();
+        canvas.save()
+        canvas.rotate(getAngle(xEnd, yEnd, xOrigin, yOrigin), xEnd, yEnd)
+        val path = Path()
+        path.moveTo(xEnd, yEnd)
+        path.lineTo(xEnd + ARROW_SIZE * mZoom, yEnd - ARROW_SIZE * 1.414f / 2f * mZoom)
+        path.lineTo(xEnd + ARROW_SIZE * 2f * mZoom, yEnd)
+        path.lineTo(xEnd + ARROW_SIZE * mZoom, yEnd + ARROW_SIZE * 1.414f / 2f * mZoom)
+        path.close()
+        canvas.drawPath(path, solidBlackPaint!!)
+        canvas.restore()
     }
 
-//    **********************************************************************************************
-//    UI events
-//    **********************************************************************************************
-
-    @Override
-    public boolean onTouch(View v, MotionEvent event) {
-
-        int action=event.getActionMasked();
-
-        switch (action) {
-            case (MotionEvent.ACTION_DOWN):
-                mActionDownEventTime=event.getEventTime();
-                mLastTouchX=event.getX();
-                mLastTouchY=event.getY();
-                mMovingClass=getTouchedClass(mLastTouchX,mLastTouchY);
-                mTouchMode=TouchMode.DRAG;
-                mPrimaryPointerIndex=0;
-                break;
-
-            case (MotionEvent.ACTION_POINTER_DOWN):
-                mOldDist=spacing(event);
-                calculateMidPoint(event);
-                mOldXMidPoint=mXMidPoint;
-                mOldYMidPoint=mYMidpoint;
-                if (mOldDist>10f) {
-                    mTouchMode = TouchMode.ZOOM;
-                    mMovingClass = null;
+    //    **********************************************************************************************
+    //    UI events
+    //    **********************************************************************************************
+    override fun onTouch(v: View, event: MotionEvent): Boolean {
+        val action = event.actionMasked
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                mActionDownEventTime = event.eventTime
+                mLastTouchX = event.x
+                mLastTouchY = event.y
+                mMovingClass = getTouchedClass(mLastTouchX, mLastTouchY)
+                mTouchMode = TouchMode.DRAG
+                mPrimaryPointerIndex = 0
+            }
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                mOldDist = spacing(event)
+                calculateMidPoint(event)
+                mOldXMidPoint = mXMidPoint
+                mOldYMidPoint = mYMidpoint
+                if (mOldDist > 10f) {
+                    mTouchMode = TouchMode.ZOOM
+                    mMovingClass = null
                 }
-                break;
-
-            case (MotionEvent.ACTION_MOVE):
-                if (mTouchMode==TouchMode.DRAG) {
-                    if (mMovingClass == null) {
-                        mXOffset = mXOffset + event.getX() - mLastTouchX;
-                        mYOffset = mYOffset + event.getY() - mLastTouchY;
-                    } else {
-                        mMovingClass.setUmlClassNormalXPos(mMovingClass.getUmlClassNormalXPos()+(event.getX()-mLastTouchX)/mZoom);
-                        mMovingClass.setUmlClassNormalYPos(mMovingClass.getUmlClassNormalYPos()+(event.getY()-mLastTouchY)/mZoom);
-                    }
-                    mLastTouchX=event.getX();
-                    mLastTouchY=event.getY();
-
-                } else if (mTouchMode == TouchMode.ZOOM) {
-                    mNewDist=spacing(event);
-                    mZoom=mZoom*mNewDist/mOldDist;
-                    calculateMidPoint(event);
-                    mXOffset=mXMidPoint+(mXOffset-mOldXMidPoint)*mNewDist/mOldDist;
-                    mYOffset=mYMidpoint+(mYOffset-mOldYMidPoint)*mNewDist/mOldDist;
-                    mOldDist=mNewDist;
-                    mOldXMidPoint=mXMidPoint;
-                    mOldYMidPoint=mYMidpoint;
+            }
+            MotionEvent.ACTION_MOVE -> if (mTouchMode == TouchMode.DRAG) {
+                if (mMovingClass == null) {
+                    mXOffset = mXOffset + event.x - mLastTouchX
+                    mYOffset = mYOffset + event.y - mLastTouchY
+                } else {
+                    mMovingClass.setUmlClassNormalXPos(mMovingClass.getUmlClassNormalXPos() + (event.x - mLastTouchX) / mZoom)
+                    mMovingClass.setUmlClassNormalYPos(mMovingClass.getUmlClassNormalYPos() + (event.y - mLastTouchY) / mZoom)
                 }
-                break;
-
-            case(MotionEvent.ACTION_POINTER_UP):
-                mTouchMode=TouchMode.DRAG;
-
-                if (event.getActionIndex() == mPrimaryPointerIndex) {
-                    mPrimaryPointerIndex=(1+mPrimaryPointerIndex)%2;
+                mLastTouchX = event.x
+                mLastTouchY = event.y
+            } else if (mTouchMode == TouchMode.ZOOM) {
+                mNewDist = spacing(event)
+                mZoom = mZoom * mNewDist / mOldDist
+                calculateMidPoint(event)
+                mXOffset = mXMidPoint + (mXOffset - mOldXMidPoint) * mNewDist / mOldDist
+                mYOffset = mYMidpoint + (mYOffset - mOldYMidPoint) * mNewDist / mOldDist
+                mOldDist = mNewDist
+                mOldXMidPoint = mXMidPoint
+                mOldYMidPoint = mYMidpoint
+            }
+            MotionEvent.ACTION_POINTER_UP -> {
+                mTouchMode = TouchMode.DRAG
+                if (event.actionIndex == mPrimaryPointerIndex) {
+                    mPrimaryPointerIndex = (1 + mPrimaryPointerIndex) % 2
                 }
-                mLastTouchX=event.getX(mPrimaryPointerIndex);
-                mLastTouchY=event.getY(mPrimaryPointerIndex);
-                break;
-
-            case (MotionEvent.ACTION_UP):
+                mLastTouchX = event.getX(mPrimaryPointerIndex)
+                mLastTouchY = event.getY(mPrimaryPointerIndex)
+            }
+            MotionEvent.ACTION_UP -> {
 
                 //double click
-                if (event.getEventTime() - mActionDownEventTime <= CLICK_DELAY &&
-                        event.getEventTime() - mFirstClickTime <= DOUBLE_CLICK_DELAY &&
-                        distance(mLastTouchX,mLastTouchY,mFirstClickX,mFirstClickY)<=DOUBLE_CLICK_DISTANCE_MAX) {
-                    if (getTouchedClass(mLastTouchX, mLastTouchY) != null)
-                        mCallback.editClass(getTouchedClass(mLastTouchX,mLastTouchY));
-                    else if (getTouchedRelation(mLastTouchX,mLastTouchY)!=null) {
-                        promptDeleteRelation(getTouchedRelation(mLastTouchX,mLastTouchY),this);
-                    }
-                    else adjustViewToProject();
+                if (event.eventTime - mActionDownEventTime <= CLICK_DELAY && event.eventTime - mFirstClickTime <= DOUBLE_CLICK_DELAY && distance(
+                        mLastTouchX,
+                        mLastTouchY,
+                        mFirstClickX,
+                        mFirstClickY
+                    ) <= DOUBLE_CLICK_DISTANCE_MAX
+                ) {
+                    if (getTouchedClass(mLastTouchX, mLastTouchY) != null) mCallback!!.editClass(
+                        getTouchedClass(mLastTouchX, mLastTouchY)
+                    ) else if (getTouchedRelation(mLastTouchX, mLastTouchY) != null) {
+                        promptDeleteRelation(getTouchedRelation(mLastTouchX, mLastTouchY), this)
+                    } else adjustViewToProject()
                 }
 
                 //simple click
-                if (event.getEventTime()-mActionDownEventTime<=CLICK_DELAY) {
-                    mFirstClickTime = event.getEventTime();
-                    mFirstClickX=event.getX();
-                    mFirstClickY=event.getY();
+                if (event.eventTime - mActionDownEventTime <= CLICK_DELAY) {
+                    mFirstClickTime = event.eventTime
+                    mFirstClickX = event.x
+                    mFirstClickY = event.y
 
                     //locate new class
-                    if (mGraphFragment.isExpectingTouchLocation()) {
-                        mGraphFragment.setExpectingTouchLocation(false);
-                        mGraphFragment.clearPrompt();
-                        mCallback.createClass(absoluteX(mLastTouchX), absoluteY(mLastTouchY));
+                    if (mGraphFragment!!.isExpectingTouchLocation) {
+                        mGraphFragment.setExpectingTouchLocation(false)
+                        mGraphFragment!!.clearPrompt()
+                        mCallback!!.createClass(absoluteX(mLastTouchX), absoluteY(mLastTouchY))
 
                         //touch relation end class
-                    } else if (mGraphFragment.isExpectingEndClass()
-                            && getTouchedClass(mLastTouchX,mLastTouchY)!=null
-                            && getTouchedClass(mLastTouchX,mLastTouchY)!=mGraphFragment.getStartClass()) {
-                        mGraphFragment.setEndClass(getTouchedClass(mLastTouchX,mLastTouchY));
-                        mGraphFragment.setExpectingEndClass(false);
-                        mGraphFragment.clearPrompt();
-                        mCallback.createRelation(mGraphFragment.getStartClass(),mGraphFragment.getEndClass(),mGraphFragment.getUmlRelationType());
+                    } else if (mGraphFragment!!.isExpectingEndClass
+                        && getTouchedClass(mLastTouchX, mLastTouchY) != null && getTouchedClass(
+                            mLastTouchX,
+                            mLastTouchY
+                        ) !== mGraphFragment.getStartClass()
+                    ) {
+                        mGraphFragment.setEndClass(getTouchedClass(mLastTouchX, mLastTouchY))
+                        mGraphFragment.setExpectingEndClass(false)
+                        mGraphFragment!!.clearPrompt()
+                        mCallback!!.createRelation(
+                            mGraphFragment.getStartClass(),
+                            mGraphFragment.getEndClass(),
+                            mGraphFragment.getUmlRelationType()
+                        )
 
                         //touch relation origin class
-                    } else if (mGraphFragment.isExpectingStartClass() && getTouchedClass(mLastTouchX, mLastTouchY) != null) {
-                        mGraphFragment.setStartClass(getTouchedClass(mLastTouchX,mLastTouchY));
-                        mGraphFragment.setExpectingStartClass(false);
-                        mGraphFragment.setExpectingEndClass(true);
-                        mGraphFragment.setPrompt("Choose end class");
+                    } else if (mGraphFragment!!.isExpectingStartClass && getTouchedClass(
+                            mLastTouchX,
+                            mLastTouchY
+                        ) != null
+                    ) {
+                        mGraphFragment.setStartClass(getTouchedClass(mLastTouchX, mLastTouchY))
+                        mGraphFragment.setExpectingStartClass(false)
+                        mGraphFragment.setExpectingEndClass(true)
+                        mGraphFragment!!.setPrompt("Choose end class")
                     }
                 }
-                break;
-
-            default:
-                return false;
+            }
+            else -> return false
         }
-        invalidate();
-        return true;
-
+        invalidate()
+        return true
     }
 
-//    **********************************************************************************************
-//    Initialization methods
-//    **********************************************************************************************
-
-    private void createCallbackToParentActivity() {
-        mCallback=(GraphViewObserver)this.getContext();
+    //    **********************************************************************************************
+    //    Initialization methods
+    //    **********************************************************************************************
+    private fun createCallbackToParentActivity() {
+        mCallback = this.context as GraphViewObserver
     }
 
-
-
-//    **********************************************************************************************
-//    Calculation methods
-//    **********************************************************************************************
-
-    private float spacing(MotionEvent event) {
-        float dx=event.getX(0)-event.getX(1);
-        float dy=event.getY(0)-event.getY(1);
-        return (float) Math.sqrt(dx*dx+dy*dy);
+    //    **********************************************************************************************
+    //    Calculation methods
+    //    **********************************************************************************************
+    private fun spacing(event: MotionEvent): Float {
+        val dx = event.getX(0) - event.getX(1)
+        val dy = event.getY(0) - event.getY(1)
+        return Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
     }
 
-    private void calculateMidPoint(MotionEvent event) {
-        mXMidPoint=(event.getX(0)+event.getX(1))/2;
-        mYMidpoint=(event.getY(0)+event.getY(1))/2;
+    private fun calculateMidPoint(event: MotionEvent) {
+        mXMidPoint = (event.getX(0) + event.getX(1)) / 2
+        mYMidpoint = (event.getY(0) + event.getY(1)) / 2
     }
 
-    private void updateUmlClassNormalDimensions(UmlClass umlClass) {
+    private fun updateUmlClassNormalDimensions(umlClass: UmlClass?) {
         //you must use the actual dimension normalized at zoom=1
         //because text width is not a linear function of zoom
 //        plainTextPaint.setTextSize(FONT_SIZE*mZoom);
 //        umlClass.setUmlClassNormalWidth((getUmlClassMaxTextWidth(umlClass, plainTextPaint)+INTERLINE*2f*mZoom)/mZoom);
 //        umlClass.setUmlClassNormalHeight(INTERLINE*3f+(FONT_SIZE+INTERLINE)*(1f+umlClass.getAttributeList().size()+umlClass.getMethodList().size()));
-        switch (umlClass.getUmlClassType()) {
-            case ENUM:
-                umlClass.setUmlClassNormalWidth(Math.max(getClassHeaderNormalWidth(umlClass),getValueBoxNormalWidth(umlClass)));
-                umlClass.setUmlClassNormalHeight(getClassHeaderNormalHeight(umlClass)+getValueBoxNormalHeight(umlClass));
-                break;
-            default:
-                float currentWidth=0;
-                if (getClassHeaderNormalWidth(umlClass)>currentWidth) currentWidth=getClassHeaderNormalWidth(umlClass);
-                if (getAttributeBoxNormalWidth(umlClass)>currentWidth) currentWidth=getAttributeBoxNormalWidth(umlClass);
-                if (getMethodBoxNormalWidth(umlClass)>currentWidth) currentWidth=getMethodBoxNormalWidth(umlClass);
-                umlClass.setUmlClassNormalWidth(currentWidth);
-                umlClass.setUmlClassNormalHeight(getClassHeaderNormalHeight(umlClass)+getAttributeBoxNormalHeight(umlClass)+getMethodBoxNormalHeight(umlClass));
-                break;
+        when (umlClass.getUmlClassType()) {
+            UmlClassType.ENUM -> {
+                umlClass.setUmlClassNormalWidth(
+                    Math.max(
+                        getClassHeaderNormalWidth(umlClass),
+                        getValueBoxNormalWidth(umlClass)
+                    )
+                )
+                umlClass.setUmlClassNormalHeight(
+                    getClassHeaderNormalHeight(umlClass) + getValueBoxNormalHeight(
+                        umlClass
+                    )
+                )
+            }
+            else -> {
+                var currentWidth = 0f
+                if (getClassHeaderNormalWidth(umlClass) > currentWidth) currentWidth =
+                    getClassHeaderNormalWidth(umlClass)
+                if (getAttributeBoxNormalWidth(umlClass) > currentWidth) currentWidth =
+                    getAttributeBoxNormalWidth(umlClass)
+                if (getMethodBoxNormalWidth(umlClass) > currentWidth) currentWidth =
+                    getMethodBoxNormalWidth(umlClass)
+                umlClass.setUmlClassNormalWidth(currentWidth)
+                umlClass.setUmlClassNormalHeight(
+                    getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
+                        umlClass
+                    ) + getMethodBoxNormalHeight(umlClass)
+                )
+            }
         }
     }
 
-    private float getClassHeaderNormalWidth(UmlClass umlClass) {
+    private fun getClassHeaderNormalWidth(umlClass: UmlClass?): Float {
         //you may have to take into account <<interface>>
-        switch (umlClass.getUmlClassType()) {
-            case INTERFACE:
-                return Math.max(getTextNormalWidth("<< Interface >>"), getTextNormalWidth(umlClass.getName())) + 2 * INTERLINE;
-            default:
-                return getTextNormalWidth(umlClass.getName())+2*INTERLINE;
+        return when (umlClass.getUmlClassType()) {
+            UmlClassType.INTERFACE -> Math.max(
+                getTextNormalWidth("<< Interface >>"),
+                getTextNormalWidth(umlClass.getName())
+            ) + 2 * INTERLINE
+            else -> getTextNormalWidth(umlClass.getName()) + 2 * INTERLINE
         }
     }
 
-    private float getClassHeaderNormalHeight(UmlClass umlClass) {
-        switch (umlClass.getUmlClassType()) {
-            case INTERFACE:
-                return FONT_SIZE*2+3*INTERLINE;
-            default:
-                return FONT_SIZE+2*INTERLINE;
+    private fun getClassHeaderNormalHeight(umlClass: UmlClass?): Float {
+        return when (umlClass.getUmlClassType()) {
+            UmlClassType.INTERFACE -> FONT_SIZE * 2 + 3 * INTERLINE
+            else -> FONT_SIZE + 2 * INTERLINE
         }
     }
 
-    private float getAttributeBoxNormalWidth(UmlClass umlClass) {
-        float currentWidth=0;
-        for (UmlClassAttribute a:umlClass.getAttributes())
-            if (getTextNormalWidth(a.getAttributeCompleteString())>currentWidth)
-                currentWidth=getTextNormalWidth(a.getAttributeCompleteString());
-
-        return currentWidth+2*INTERLINE;
+    private fun getAttributeBoxNormalWidth(umlClass: UmlClass?): Float {
+        var currentWidth = 0f
+        for (a in umlClass.getAttributes()) if (getTextNormalWidth(a.attributeCompleteString) > currentWidth) currentWidth =
+            getTextNormalWidth(a.attributeCompleteString)
+        return currentWidth + 2 * INTERLINE
     }
 
-    private float getAttributeBoxNormalHeight(UmlClass umlClass) {
-
-        return umlClass.getAttributes().size()*FONT_SIZE+(umlClass.getAttributes().size()+1)*INTERLINE;
+    private fun getAttributeBoxNormalHeight(umlClass: UmlClass?): Float {
+        return umlClass.getAttributes().size * FONT_SIZE + (umlClass.getAttributes().size + 1) * INTERLINE
     }
 
-    private float getMethodBoxNormalWidth(UmlClass umlClass) {
-        float currentWidth=0;
-        for (UmlClassMethod m:umlClass.getMethods())
-            if (getTextNormalWidth(m.getMethodCompleteString())>currentWidth)
-                currentWidth=getTextNormalWidth(m.getMethodCompleteString());
-
-        return currentWidth+2*INTERLINE;
+    private fun getMethodBoxNormalWidth(umlClass: UmlClass?): Float {
+        var currentWidth = 0f
+        for (m in umlClass.getMethods()) if (getTextNormalWidth(m.methodCompleteString) > currentWidth) currentWidth =
+            getTextNormalWidth(m.methodCompleteString)
+        return currentWidth + 2 * INTERLINE
     }
 
-    private float getMethodBoxNormalHeight(UmlClass umlClass) {
-
-        return umlClass.getMethods().size()*FONT_SIZE+(umlClass.getMethods().size()+1)*INTERLINE;
+    private fun getMethodBoxNormalHeight(umlClass: UmlClass?): Float {
+        return umlClass.getMethods().size * FONT_SIZE + (umlClass.getMethods().size + 1) * INTERLINE
     }
 
-    private float getValueBoxNormalWidth(UmlClass umlClass) {
-        float currentWidth=0;
-        for (UmlEnumValue v:umlClass.getValues())
-            if (getTextNormalWidth(v.getName())>currentWidth)
-                currentWidth=getTextNormalWidth(v.getName());
-
-        return currentWidth+2*INTERLINE;
+    private fun getValueBoxNormalWidth(umlClass: UmlClass?): Float {
+        var currentWidth = 0f
+        for (v in umlClass.getValues()) if (getTextNormalWidth(v.name) > currentWidth) currentWidth =
+            getTextNormalWidth(v.name)
+        return currentWidth + 2 * INTERLINE
     }
 
-    private float getValueBoxNormalHeight(UmlClass umlClass) {
-
-        return umlClass.getValues().size()*FONT_SIZE+(umlClass.getValues().size()+1)*INTERLINE;
+    private fun getValueBoxNormalHeight(umlClass: UmlClass?): Float {
+        return umlClass.getValues().size * FONT_SIZE + (umlClass.getValues().size + 1) * INTERLINE
     }
 
-    private float getTextNormalWidth(String text) {
-        plainTextPaint.setTextSize(FONT_SIZE*mZoom);
-        return plainTextPaint.measureText(text)/mZoom;
+    private fun getTextNormalWidth(text: String?): Float {
+        plainTextPaint!!.textSize = FONT_SIZE * mZoom
+        return plainTextPaint!!.measureText(text) / mZoom
     }
 
-    private float getAngle(float xOrigin, float yOrigin, float xEnd, float yEnd) {
+    private fun getAngle(xOrigin: Float, yOrigin: Float, xEnd: Float, yEnd: Float): Float {
         //calculate angle between segment and horizontal
-        return (float)(Math.copySign(Math.abs(Math.acos((xEnd-xOrigin)/Math.sqrt((xEnd-xOrigin)*(xEnd-xOrigin)+(yEnd-yOrigin)*(yEnd-yOrigin)))),yEnd-yOrigin)/
-                Math.PI*180f);
+        return (Math.copySign(
+            Math.abs(
+                Math.acos(
+                    (xEnd - xOrigin) / Math.sqrt(
+                        ((xEnd - xOrigin) * (xEnd - xOrigin) + (yEnd - yOrigin) * (yEnd - yOrigin)).toDouble()
+                    )
+                )
+            ), (yEnd - yOrigin).toDouble()
+        ) /
+                Math.PI * 180f).toFloat()
     }
 
-    private float getAbsoluteProjectWidth() {
-        //return the length of the rectangle that can contain all the project
-
-        float minX=1000000;
-        float maxX=-1000000;
-        for (UmlClass c : mUmlProject.getUmlClasses()) {
-            minX=Math.min(c.getUmlClassNormalXPos(),minX);
-            maxX=Math.max(c.getNormalRightEnd(),maxX);
+    //return the length of the rectangle that can contain all the project
+    private val absoluteProjectWidth: Float
+        private get() {
+            //return the length of the rectangle that can contain all the project
+            var minX = 1000000f
+            var maxX = -1000000f
+            for (c in mUmlProject.getUmlClasses()) {
+                minX = Math.min(c.umlClassNormalXPos, minX)
+                maxX = Math.max(c.normalRightEnd, maxX)
+            }
+            return maxX - minX
         }
-        return maxX-minX;
-    }
 
-    private float getAbsoluteProjectHeight() {
-        //return the height of the rectangle that can contain all the project
-
-        float minY=1000000;
-        float maxY=-1000000;
-        for (UmlClass c : mUmlProject.getUmlClasses()) {
-            minY=Math.min(c.getUmlClassNormalYPos(),minY);
-            maxY=Math.max(c.getNormalBottomEnd(),maxY);
+    //return the height of the rectangle that can contain all the project
+    private val absoluteProjectHeight: Float
+        private get() {
+            //return the height of the rectangle that can contain all the project
+            var minY = 1000000f
+            var maxY = -1000000f
+            for (c in mUmlProject.getUmlClasses()) {
+                minY = Math.min(c.umlClassNormalYPos, minY)
+                maxY = Math.max(c.normalBottomEnd, maxY)
+            }
+            return maxY - minY
         }
-        return maxY-minY;
-    }
+    private val absoluteProjectLeft: Float
+        private get() {
+            var minX = 1000000f
+            for (c in mUmlProject.getUmlClasses()) minX = Math.min(c.umlClassNormalXPos, minX)
+            return minX
+        }
+    private val absoluteProjectRight: Float
+        private get() {
+            var maxX = -1000000f
+            for (c in mUmlProject.getUmlClasses()) maxX = Math.max(c.normalRightEnd, maxX)
+            return maxX
+        }
+    private val absoluteProjectTop: Float
+        private get() {
+            var minY = 1000000f
+            for (c in mUmlProject.getUmlClasses()) minY = Math.min(c.umlClassNormalYPos, minY)
+            return minY
+        }
+    private val absoluteProjectBottom: Float
+        private get() {
+            var maxY = -1000000f
+            for (c in mUmlProject.getUmlClasses()) maxY = Math.max(c.normalBottomEnd, maxY)
+            return maxY
+        }
 
-    private float getAbsoluteProjectLeft() {
-        float minX=1000000;
-        for (UmlClass c : mUmlProject.getUmlClasses()) minX=Math.min(c.getUmlClassNormalXPos(),minX);
-        return minX;
-    }
-
-    private float getAbsoluteProjectRight() {
-        float maxX=-1000000;
-        for (UmlClass c : mUmlProject.getUmlClasses()) maxX=Math.max(c.getNormalRightEnd(),maxX);
-        return maxX;
-    }
-
-    private float getAbsoluteProjectTop() {
-        float minY=1000000;
-        for (UmlClass c : mUmlProject.getUmlClasses()) minY=Math.min(c.getUmlClassNormalYPos(),minY);
-        return minY;
-    }
-
-    private float getAbsoluteProjectBottom() {
-        float maxY=-1000000;
-        for (UmlClass c : mUmlProject.getUmlClasses()) maxY=Math.max(c.getNormalBottomEnd(),maxY);
-        return maxY;
-    }
-
-    private void adjustViewToProject() {
-        float xZoom=this.getMeasuredWidth()/getAbsoluteProjectWidth();
-        float yZoom=this.getMeasuredHeight()/getAbsoluteProjectHeight();
+    private fun adjustViewToProject() {
+        val xZoom = this.measuredWidth / absoluteProjectWidth
+        val yZoom = this.measuredHeight / absoluteProjectHeight
         if (xZoom <= yZoom) {
-            mZoom = xZoom;
-            mXOffset=-getAbsoluteProjectLeft()*mZoom;
-            mYOffset =-getAbsoluteProjectTop()*mZoom+(this.getMeasuredHeight()-getAbsoluteProjectHeight()*mZoom)/2f;
+            mZoom = xZoom
+            mXOffset = -absoluteProjectLeft * mZoom
+            mYOffset =
+                -absoluteProjectTop * mZoom + (this.measuredHeight - absoluteProjectHeight * mZoom) / 2f
         } else {
-            mZoom=yZoom;
-            mYOffset=-getAbsoluteProjectTop()*mZoom;
-            mXOffset=-getAbsoluteProjectLeft()*mZoom+(this.getMeasuredWidth()-getAbsoluteProjectWidth()*mZoom)/2f;
+            mZoom = yZoom
+            mYOffset = -absoluteProjectTop * mZoom
+            mXOffset =
+                -absoluteProjectLeft * mZoom + (this.measuredWidth - absoluteProjectWidth * mZoom) / 2f
         }
-        this.invalidate();
+        this.invalidate()
     }
 
-//    **********************************************************************************************
-//    Coordinates transformations
-//    "visible" refers to the screen referential
-//    "absolute" refers to the absolute referential, whose coordinates are class attributes
-//    **********************************************************************************************
-
-    private float visibleX(float absoluteX) {
-        return mXOffset+mZoom*absoluteX;
+    //    **********************************************************************************************
+    //    Coordinates transformations
+    //    "visible" refers to the screen referential
+    //    "absolute" refers to the absolute referential, whose coordinates are class attributes
+    //    **********************************************************************************************
+    private fun visibleX(absoluteX: Float): Float {
+        return mXOffset + mZoom * absoluteX
     }
 
-    private float visibleY(float absoluteY) {
-        return mYOffset+mZoom*absoluteY;
+    private fun visibleY(absoluteY: Float): Float {
+        return mYOffset + mZoom * absoluteY
     }
 
-    private float absoluteX(float visibleX) {
-        return (visibleX-mXOffset)/mZoom;
+    private fun absoluteX(visibleX: Float): Float {
+        return (visibleX - mXOffset) / mZoom
     }
 
-    private float absoluteY(float visibleY) {
-        return (visibleY-mYOffset)/mZoom;
+    private fun absoluteY(visibleY: Float): Float {
+        return (visibleY - mYOffset) / mZoom
     }
 
-//    **********************************************************************************************
-//    Other methods
-//    **********************************************************************************************
-
-    private UmlClass getTouchedClass(float visibleX, float visibleY) {
-
-        for (UmlClass c:mUmlProject.getUmlClasses()) {
-            if (c.containsPoint(absoluteX(visibleX), absoluteY(visibleY)))
-                return c;
+    //    **********************************************************************************************
+    //    Other methods
+    //    **********************************************************************************************
+    private fun getTouchedClass(visibleX: Float, visibleY: Float): UmlClass? {
+        for (c in mUmlProject.getUmlClasses()) {
+            if (c!!.containsPoint(absoluteX(visibleX), absoluteY(visibleY))) return c
         }
-        return null;
+        return null
     }
 
-    public UmlRelation getTouchedRelation(float visibleX, float visibleY) {
-        for (UmlRelation r : mUmlProject.getUmlRelations()) {
-            if (distance(absoluteX(visibleX),absoluteY(visibleY),r.getXOrigin(),r.getYOrigin(),r.getXEnd(),r.getYEnd())<=20
-            && absoluteX(visibleX)>=Math.min(r.getXOrigin(),r.getXEnd())-20
-            && absoluteX(visibleX)<=Math.max(r.getXOrigin(),r.getXEnd())+20
-            && absoluteY(visibleY)>=Math.min(r.getYOrigin(),r.getYEnd())-20
-            && absoluteY(visibleY)<=Math.max(r.getYOrigin(),r.getYEnd())+20)
-                return r;
+    fun getTouchedRelation(visibleX: Float, visibleY: Float): UmlRelation? {
+        for (r in mUmlProject.getUmlRelations()) {
+            if (distance(
+                    absoluteX(visibleX),
+                    absoluteY(visibleY),
+                    r.xOrigin,
+                    r.yOrigin,
+                    r.xEnd,
+                    r.yEnd
+                ) <= 20 && absoluteX(visibleX) >= Math.min(r.xOrigin, r.xEnd) - 20 && absoluteX(
+                    visibleX
+                ) <= Math.max(r.xOrigin, r.xEnd) + 20 && absoluteY(visibleY) >= Math.min(
+                    r.yOrigin,
+                    r.yEnd
+                ) - 20 && absoluteY(visibleY) <= Math.max(r.yOrigin, r.yEnd) + 20
+            ) return r
         }
-        return null;
+        return null
     }
 
-    private float distance(float dotX, float dotY, float originX, float originY, float endX, float endY) {
+    private fun distance(
+        dotX: Float,
+        dotY: Float,
+        originX: Float,
+        originY: Float,
+        endX: Float,
+        endY: Float
+    ): Float {
         //calculate the distance between a dot and a line
         //uX and uY are coordinates of a normal vector perpendicular to the line
-
-        float uX;
-        float uY;
-
+        val uX: Float
+        val uY: Float
         if (originX == endX) {
-            uX=0;
-            uY=1;
+            uX = 0f
+            uY = 1f
         } else if (originY == endY) {
-            uX = 1;
-            uY = 0;
+            uX = 1f
+            uY = 0f
         } else {
-            uX = (float) (1f / Math.sqrt(1f + (endX - originX) * (endX - originX) / (endY - originY) / (endY - originY)));
-            uY= (float) ((originX-endX)/(endY-originY)/Math.sqrt(1f + (endX - originX) * (endX - originX) / (endY - originY) / (endY - originY)));
+            uX =
+                (1f / Math.sqrt((1f + (endX - originX) * (endX - originX) / (endY - originY) / (endY - originY)).toDouble())).toFloat()
+            uY =
+                ((originX - endX) / (endY - originY) / Math.sqrt((1f + (endX - originX) * (endX - originX) / (endY - originY) / (endY - originY)).toDouble())).toFloat()
         }
-
-        return Math.abs((dotX-originX)*uX+(dotY-originY)*uY);
+        return Math.abs((dotX - originX) * uX + (dotY - originY) * uY)
     }
 
-    private float distance(float X1, float Y1, float X2, float Y2) {
+    private fun distance(X1: Float, Y1: Float, X2: Float, Y2: Float): Float {
         //calculate the distance between two points M1(X1,Y1) and M2(X2,Y2)
-        return (float) Math.sqrt((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2));
+        return Math.sqrt(((X1 - X2) * (X1 - X2) + (Y1 - Y2) * (Y1 - Y2)).toDouble()).toFloat()
     }
 
-    private void updateProjectGeometricalParameters() {
-        mUmlProject.setZoom(mZoom);
-        mUmlProject.setXOffset(mXOffset);
-        mUmlProject.setYOffset(mYOffset);
+    private fun updateProjectGeometricalParameters() {
+        mUmlProject.setZoom(mZoom)
+        mUmlProject.setXOffset(mXOffset)
+        mUmlProject.setYOffset(mYOffset)
     }
 
-//    **********************************************************************************************
-//    Interaction methods
-//    **********************************************************************************************
-    private void promptDeleteRelation(final UmlRelation umlRelation, final View view) {
-        AlertDialog.Builder builder=new AlertDialog.Builder(getContext());
+    //    **********************************************************************************************
+    //    Interaction methods
+    //    **********************************************************************************************
+    private fun promptDeleteRelation(umlRelation: UmlRelation?, view: View) {
+        val builder = AlertDialog.Builder(context)
         builder.setTitle("Delete relation")
-                .setMessage("Are you sure you want to delete this relation ?")
-                .setNegativeButton("NO", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
+            .setMessage("Are you sure you want to delete this relation ?")
+            .setNegativeButton("NO") { dialog, which -> }
+            .setPositiveButton("YES") { dialog, which ->
+                mUmlProject!!.removeUmlRelation(umlRelation)
+                view.invalidate()
+            }
+        val dialog = builder.create()
+        dialog.show()
+    }
 
-                    }
-                })
-                .setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        mUmlProject.removeUmlRelation(umlRelation);
-                        view.invalidate();
-                    }
-                });
-        AlertDialog dialog=builder.create();
-        dialog.show();
+    companion object {
+        private const val CLICK_DELAY: Long = 200
+        private const val DOUBLE_CLICK_DELAY: Long = 500
+        private const val DOUBLE_CLICK_DISTANCE_MAX = 10f
+
+        //    **********************************************************************************************
+        //    Standard drawing dimensions (in dp)
+        //    **********************************************************************************************
+        private const val FONT_SIZE = 20f
+        private const val INTERLINE = 10f
+        private const val ARROW_SIZE = 10f
     }
 }

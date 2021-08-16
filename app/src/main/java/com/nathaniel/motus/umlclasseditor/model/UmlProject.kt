@@ -1,378 +1,373 @@
-package com.nathaniel.motus.umlclasseditor.model;
+package com.nathaniel.motus.umlclasseditor.model
 
-import android.content.Context;
-import android.net.Uri;
-import android.util.Log;
+import android.view.View.OnTouchListener
+import com.nathaniel.motus.umlclasseditor.view.GraphFragment
+import com.nathaniel.motus.umlclasseditor.model.UmlProject
+import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
+import com.nathaniel.motus.umlclasseditor.model.UmlClass
+import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
+import android.graphics.Typeface
+import android.graphics.DashPathEffect
+import android.content.res.TypedArray
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation
+import com.nathaniel.motus.umlclasseditor.view.GraphView
+import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
+import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
+import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
+import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
+import android.view.MotionEvent
+import android.content.DialogInterface
+import android.widget.TextView
+import android.widget.ImageButton
+import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
+import com.nathaniel.motus.umlclasseditor.view.EditorFragment
+import android.widget.AdapterView.OnItemLongClickListener
+import android.widget.RadioGroup
+import android.widget.ExpandableListView.OnChildClickListener
+import android.widget.EditText
+import android.widget.RadioButton
+import android.widget.ExpandableListView
+import android.widget.LinearLayout
+import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.AdapterItem
+import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
+import com.nathaniel.motus.umlclasseditor.model.AddItemString
+import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import android.widget.AdapterView
+import android.widget.Toast
+import com.nathaniel.motus.umlclasseditor.model.UmlType
+import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
+import android.widget.CheckBox
+import android.widget.Spinner
+import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.TypeMultiplicity
+import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator
+import android.widget.ArrayAdapter
+import com.nathaniel.motus.umlclasseditor.model.MethodParameter
+import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
+import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
+import org.json.JSONArray
+import org.json.JSONObject
+import org.json.JSONException
+import kotlin.jvm.JvmOverloads
+import android.content.pm.PackageManager
+import android.content.pm.PackageInfo
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.navigation.NavigationView
+import androidx.drawerlayout.widget.DrawerLayout
+import android.widget.FrameLayout
+import androidx.core.view.MenuCompat
+import androidx.annotation.RequiresApi
+import android.os.Build
+import android.content.SharedPreferences
+import android.content.SharedPreferences.Editor
+import com.nathaniel.motus.umlclasseditor.controller.MainActivity
+import androidx.core.view.GravityCompat
+import android.content.Intent
+import android.widget.AbsListView
+import android.util.SparseBooleanArray
+import android.text.Html
+import android.app.Activity
+import android.content.Context
+import android.net.Uri
+import android.widget.BaseExpandableListAdapter
+import com.nathaniel.motus.umlclasseditor.controller.IOUtils
+import java.io.File
+import java.util.ArrayList
 
-import com.nathaniel.motus.umlclasseditor.controller.IOUtils;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Objects;
-
-public class UmlProject {
-
-    private String mName;
-    private ArrayList<UmlClass> mUmlClasses;
-    private int mUmlClassCount;
-    private ArrayList<UmlRelation> mUmlRelations;
-    private int mAppVersionCode;
-    private float mZoom=1;
-    private float mXOffset=0;
-    private float mYOffset=0;
-
-    public static final String JSON_PROJECT_NAME = "ProjectName";
-    public static final String JSON_PROJECT_CLASS_COUNT="ProjectClassCount";
-    public static final String JSON_PROJECT_CLASSES = "ProjectClasses";
-    public static final String JSON_PROJECT_RELATIONS = "ProjectRelations";
-    public static final String JSON_PROJECT_PACKAGE_VERSION_CODE ="ProjectPackageVersionCode";
-    public static final String JSON_PROJECT_ZOOM="ProjectZoom";
-    public static final String JSON_PROJECT_X_OFFSET="ProjectXOffset";
-    public static final String JSON_PROJECT_Y_OFFSET="ProjectYOffset";
-
-    public static final String PROJECT_DIRECTORY="projects";
-
-//    **********************************************************************************************
-//    Constructors
-//    **********************************************************************************************
-
-    public UmlProject(String name,Context context) {
-        mName = name;
-        mUmlClasses=new ArrayList<UmlClass>();
-        mUmlClassCount=0;
-        mUmlRelations=new ArrayList<UmlRelation>();
+class UmlProject(//    **********************************************************************************************
+    //    Getters and setters
+    //    **********************************************************************************************
+    var name: String, context: Context?
+) {
+    val umlClasses: ArrayList<UmlClass?>
+    var umlClassCount: Int
+    var umlRelations: ArrayList<UmlRelation?>
+    private var mAppVersionCode = 0
+    var zoom = 1f
+    var xOffset = 0f
+    var yOffset = 0f
+    fun getUmlClass(className: String?): UmlClass? {
+        for (c in umlClasses) if (c.getName() == className) return c
+        return null
     }
 
-//    **********************************************************************************************
-//    Getters and setters
-//    **********************************************************************************************
-
-    public String getName() {
-        return mName;
+    fun setAppVersionCode(appVersionCode: Int) {
+        mAppVersionCode = appVersionCode
     }
 
-    public void setName(String name) {
-        mName = name;
+    fun findClassByOrder(classOrder: Int): UmlClass? {
+        for (c in umlClasses) if (c.getClassOrder() == classOrder) return c
+        return null
     }
 
-    public ArrayList<UmlClass> getUmlClasses() {
-        return mUmlClasses;
+    //    **********************************************************************************************
+    //    Initialization
+    //    **********************************************************************************************
+    //    **********************************************************************************************
+    //    Modifiers
+    //    **********************************************************************************************
+    fun addUmlClass(umlClass: UmlClass?) {
+        umlClasses.add(umlClass)
+        umlClassCount++
     }
 
-    public ArrayList<UmlRelation> getUmlRelations() {
-        return mUmlRelations;
+    fun removeUmlClass(umlClass: UmlClass?) {
+        umlClasses.remove(umlClass)
+        UmlType.Companion.removeUmlType(umlClass)
+        removeRelationsInvolving(umlClass)
+        removeAttributesOfType(umlClass as UmlType?)
+        removeMethodsOfType(umlClass as UmlType?)
+        removeParametersOfType(umlClass as UmlType?)
     }
 
-    public UmlClass getUmlClass(String className) {
-        for (UmlClass c:mUmlClasses)
-            if (Objects.equals(c.getName(), className)) return c;
-
-        return null;
+    fun addUmlRelation(umlRelation: UmlRelation?) {
+        umlRelations.add(umlRelation)
     }
 
-    public void setUmlRelations(ArrayList<UmlRelation> UmlRelations) {
-        this.mUmlRelations = UmlRelations;
+    fun removeUmlRelation(umlRelation: UmlRelation?) {
+        umlRelations.remove(umlRelation)
     }
 
-    public void setAppVersionCode(int appVersionCode) {
-        mAppVersionCode = appVersionCode;
-    }
-
-    public void setZoom(float zoom) {
-        mZoom = zoom;
-    }
-
-    public void setXOffset(float XOffset) {
-        mXOffset = XOffset;
-    }
-
-    public void setYOffset(float YOffset) {
-        mYOffset = YOffset;
-    }
-
-    public float getZoom() {
-        return mZoom;
-    }
-
-    public float getXOffset() {
-        return mXOffset;
-    }
-
-    public float getYOffset() {
-        return mYOffset;
-    }
-
-    public int getUmlClassCount() {
-        return mUmlClassCount;
-    }
-
-    public void setUmlClassCount(int umlClassCount) {
-        mUmlClassCount = umlClassCount;
-    }
-
-    public UmlClass findClassByOrder(int classOrder) {
-        for (UmlClass c:mUmlClasses)
-            if (c.getClassOrder()==classOrder) return c;
-            return null;
-    }
-
-//    **********************************************************************************************
-//    Initialization
-//    **********************************************************************************************
-
-//    **********************************************************************************************
-//    Modifiers
-//    **********************************************************************************************
-
-    public void addUmlClass(UmlClass umlClass) {
-        mUmlClasses.add(umlClass);
-        mUmlClassCount++;
-    }
-
-    public void removeUmlClass(UmlClass umlClass) {
-        mUmlClasses.remove(umlClass);
-        UmlType.removeUmlType(umlClass);
-        removeRelationsInvolving(umlClass);
-        removeAttributesOfType((UmlType)umlClass);
-        removeMethodsOfType((UmlType)umlClass);
-        removeParametersOfType((UmlType)umlClass);
-    }
-
-    public void addUmlRelation(UmlRelation umlRelation) {
-        mUmlRelations.add(umlRelation);
-    }
-
-    public void removeUmlRelation(UmlRelation umlRelation) {
-        mUmlRelations.remove(umlRelation);
-    }
-
-    public void removeRelationsInvolving(UmlClass umlClass) {
-        ArrayList<UmlRelation> umlRelations=new ArrayList<>();
-        for (UmlRelation r : mUmlRelations) {
-            if (umlClass.isInvolvedInRelation(r)) umlRelations.add(r);
+    fun removeRelationsInvolving(umlClass: UmlClass?) {
+        val umlRelations = ArrayList<UmlRelation?>()
+        for (r in this.umlRelations) {
+            if (umlClass!!.isInvolvedInRelation(r)) umlRelations.add(r)
         }
-        for (UmlRelation r : umlRelations) {
-            removeUmlRelation(r);
+        for (r in umlRelations) {
+            removeUmlRelation(r)
         }
     }
 
-    public void removeAttributesOfType(UmlType umlType) {
-        for (UmlClass c : this.getUmlClasses()) {
-            for (UmlClassAttribute a : c.getAttributes()) {
-                if (a.getUmlType()==umlType) c.removeAttribute(a);
+    fun removeAttributesOfType(umlType: UmlType?) {
+        for (c in umlClasses) {
+            for (a in c.getAttributes()) {
+                if (a.umlType === umlType) c!!.removeAttribute(a)
             }
         }
     }
 
-    public void removeMethodsOfType(UmlType umlType) {
-        for (UmlClass c : this.getUmlClasses()) {
-            for (UmlClassMethod m : c.getMethods()) {
-                if (m.getUmlType()==umlType) c.removeMethod(m);
+    fun removeMethodsOfType(umlType: UmlType?) {
+        for (c in umlClasses) {
+            for (m in c.getMethods()) {
+                if (m.umlType === umlType) c!!.removeMethod(m)
             }
         }
     }
 
-    public void removeParametersOfType(UmlType umlType) {
-        for (UmlClass c : this.getUmlClasses()) {
-            for (UmlClassMethod m : c.getMethods()) {
-                for (MethodParameter p : m.getParameters()) {
-                    if (p.getUmlType() == umlType) m.removeParameter(p);
+    fun removeParametersOfType(umlType: UmlType?) {
+        for (c in umlClasses) {
+            for (m in c.getMethods()) {
+                for (p in m.parameters) {
+                    if (p.umlType === umlType) m!!.removeParameter(p)
                 }
             }
         }
     }
 
-    public void incrementClassCount() {
-        mUmlClassCount++;
+    fun incrementClassCount() {
+        umlClassCount++
     }
 
-//    **********************************************************************************************
-//    Test methods
-//    **********************************************************************************************
-
-    public boolean relationAlreadyExistsBetween(UmlClass firstClass, UmlClass secondClass) {
+    //    **********************************************************************************************
+    //    Test methods
+    //    **********************************************************************************************
+    fun relationAlreadyExistsBetween(firstClass: UmlClass?, secondClass: UmlClass?): Boolean {
         //check whether there already is a relation between two classes
         //this test is not oriented
-        boolean test=false;
-
-        for (UmlRelation r : this.getUmlRelations())
-            if ((r.getRelationOriginClass()==firstClass && r.getRelationEndClass()==secondClass)
-                    || (r.getRelationOriginClass()==secondClass && r.getRelationEndClass()==firstClass))
-                test=true;
-        return test;
+        var test = false
+        for (r in umlRelations) if (r.getRelationOriginClass() === firstClass && r.getRelationEndClass() === secondClass
+            || r.getRelationOriginClass() === secondClass && r.getRelationEndClass() === firstClass
+        ) test = true
+        return test
     }
 
-    public boolean hasConflictNameWith(UmlClass umlClass) {
-        boolean test=false;
-        for (UmlClass c:mUmlClasses)
-            if (c.getName().compareTo(umlClass.getName())==0) test=true;
-        return test;
+    fun hasConflictNameWith(umlClass: UmlClass): Boolean {
+        var test = false
+        for (c in umlClasses) if (c.getName().compareTo(umlClass.name) == 0) test = true
+        return test
     }
 
-    public boolean containsClassNamed(String className) {
+    fun containsClassNamed(className: String): Boolean {
         //check whether a class with className already exists in this project
-
-        for (UmlClass c:this.getUmlClasses())
-            if (c.getName()!=null && c.getName().equals(className)) return true;
-
-        return false;
+        for (c in umlClasses) if (c.getName() != null && c.getName() == className) return true
+        return false
     }
 
-//    **********************************************************************************************
-//    JSON methods
-//    **********************************************************************************************
-
-    public JSONObject toJSONObject(Context context) {
-        JSONObject jsonObject = new JSONObject();
-
-        try {
-            jsonObject.put(JSON_PROJECT_PACKAGE_VERSION_CODE, IOUtils.getAppVersionCode(context));
-            jsonObject.put(JSON_PROJECT_ZOOM,mZoom);
-            jsonObject.put(JSON_PROJECT_X_OFFSET,mXOffset);
-            jsonObject.put(JSON_PROJECT_Y_OFFSET,mYOffset);
-            jsonObject.put(JSON_PROJECT_NAME, mName);
-            jsonObject.put(JSON_PROJECT_CLASSES, getClassesToJSONArray());
-            jsonObject.put(JSON_PROJECT_CLASS_COUNT,mUmlClassCount);
-            jsonObject.put(JSON_PROJECT_RELATIONS, getRelationsToJSONArray());
-            return jsonObject;
-        } catch (JSONException e) {
-            return null;
+    //    **********************************************************************************************
+    //    JSON methods
+    //    **********************************************************************************************
+    fun toJSONObject(context: Context): JSONObject? {
+        val jsonObject = JSONObject()
+        return try {
+            jsonObject.put(JSON_PROJECT_PACKAGE_VERSION_CODE, IOUtils.getAppVersionCode(context))
+            jsonObject.put(JSON_PROJECT_ZOOM, zoom.toDouble())
+            jsonObject.put(JSON_PROJECT_X_OFFSET, xOffset.toDouble())
+            jsonObject.put(JSON_PROJECT_Y_OFFSET, yOffset.toDouble())
+            jsonObject.put(JSON_PROJECT_NAME, name)
+            jsonObject.put(JSON_PROJECT_CLASSES, classesToJSONArray)
+            jsonObject.put(JSON_PROJECT_CLASS_COUNT, umlClassCount)
+            jsonObject.put(JSON_PROJECT_RELATIONS, relationsToJSONArray)
+            jsonObject
+        } catch (e: JSONException) {
+            null
         }
     }
 
-    public static UmlProject fromJSONObject(JSONObject jsonObject,Context context) {
-        try {
-            UmlProject project = new UmlProject(jsonObject.getString(JSON_PROJECT_NAME), context);
-
-            project.setAppVersionCode(jsonObject.getInt(JSON_PROJECT_PACKAGE_VERSION_CODE));
-            project.setZoom((float)(jsonObject.getDouble(JSON_PROJECT_ZOOM)));
-            project.setXOffset((float)(jsonObject.getDouble(JSON_PROJECT_X_OFFSET)));
-            project.setYOffset((float)(jsonObject.getDouble(JSON_PROJECT_Y_OFFSET)));
-            project.setUmlClassCount(jsonObject.getInt(JSON_PROJECT_CLASS_COUNT));
-
-            //copy jsonObject because it is cleared in getClassesFromJSONArray
-            JSONObject jsonObjectCopy=new JSONObject(jsonObject.toString());
-            for (UmlClass c : getClassesFromJSONArray((JSONArray)jsonObjectCopy.get(JSON_PROJECT_CLASSES)))
-                project.addUmlClass(c);
-            project.populateClassesFromJSONArray((JSONArray) jsonObject.get(JSON_PROJECT_CLASSES));
-            project.setUmlRelations(UmlProject.getRelationsFromJSONArray((JSONArray) jsonObject.get(JSON_PROJECT_RELATIONS),project));
-            return project;
-        } catch (JSONException e) {
-            return null;
+    private val classesToJSONArray: JSONArray
+        private get() {
+            val jsonArray = JSONArray()
+            for (c in umlClasses) jsonArray.put(c!!.toJSONObject())
+            return jsonArray
         }
-    }
 
-    private JSONArray getClassesToJSONArray() {
-        JSONArray jsonArray = new JSONArray();
-
-        for (UmlClass c:mUmlClasses) jsonArray.put(c.toJSONObject());
-
-        return jsonArray;
-    }
-
-    private static ArrayList<UmlClass> getClassesFromJSONArray(JSONArray jsonArray) {
-        //first get classes and their names, to be populated later
-        //otherwise, attributes with custom types can't be created
-
-        ArrayList<UmlClass> classes = new ArrayList<>();
-
-        JSONObject jsonObject=(JSONObject)jsonArray.remove(0);
+    private fun populateClassesFromJSONArray(jsonArray: JSONArray) {
+        var jsonObject = jsonArray.remove(0) as JSONObject
         while (jsonObject != null) {
-            classes.add(UmlClass.fromJSONObject(jsonObject));
-            jsonObject=(JSONObject)jsonArray.remove(0);
-        }
-        return classes;
-    }
-
-    private void populateClassesFromJSONArray(JSONArray jsonArray) {
-        JSONObject jsonObject=(JSONObject)jsonArray.remove(0);
-        while (jsonObject != null) {
-            UmlClass.populateUmlClassFromJSONObject(jsonObject, this);
-            jsonObject = (JSONObject) jsonArray.remove(0);
+            UmlClass.Companion.populateUmlClassFromJSONObject(jsonObject, this)
+            jsonObject = jsonArray.remove(0) as JSONObject
         }
     }
 
-    private JSONArray getRelationsToJSONArray() {
-        JSONArray jsonArray = new JSONArray();
-
-        for (UmlRelation r:mUmlRelations) jsonArray.put(r.toJSONObject());
-
-        return jsonArray;
-    }
-
-    private static ArrayList<UmlRelation> getRelationsFromJSONArray(JSONArray jsonArray, UmlProject project) {
-        ArrayList<UmlRelation> relations = new ArrayList<>();
-
-        JSONObject jsonObject = (JSONObject) jsonArray.remove(0);
-        while (jsonObject != null) {
-            relations.add(UmlRelation.fromJSONObject(jsonObject,project));
-            jsonObject = (JSONObject) jsonArray.remove(0);
+    private val relationsToJSONArray: JSONArray
+        private get() {
+            val jsonArray = JSONArray()
+            for (r in umlRelations) jsonArray.put(r!!.toJSONObject())
+            return jsonArray
         }
-        return relations;
+
+    //    **********************************************************************************************
+    //    Save and load project methods
+    //    **********************************************************************************************
+    fun save(context: Context) {
+        val destination = File(context.filesDir, PROJECT_DIRECTORY)
+        if (!destination.exists()) destination.mkdir()
+        IOUtils.saveFileToInternalStorage(toJSONObject(context).toString(), File(destination, name))
     }
 
-//    **********************************************************************************************
-//    Save and load project methods
-//    **********************************************************************************************
-
-    public void save(Context context) {
-        File destination=new File(context.getFilesDir(),PROJECT_DIRECTORY);
-        if (!destination.exists()) destination.mkdir();
-        IOUtils.saveFileToInternalStorage(this.toJSONObject(context).toString(),new File(destination,mName));
+    fun exportProject(context: Context, toDestination: Uri?) {
+        IOUtils.saveFileToExternalStorage(context, toJSONObject(context).toString(), toDestination)
     }
 
-    public static UmlProject load(Context context, String projectName) {
-        File destination=new File(context.getFilesDir(),PROJECT_DIRECTORY);
-        File source=new File(destination,projectName);
-        try {
-            return UmlProject.fromJSONObject(new JSONObject(IOUtils.getFileFromInternalStorage(source)),context);
-        } catch (JSONException e) {
-            e.printStackTrace();
+    fun mergeWith(project: UmlProject?) {
+        for (c in project!!.umlClasses) {
+            while (UmlType.Companion.containsPrimitiveUmlTypeNamed(c.getName())) c.setName(c.getName() + "(1)")
+            while (UmlType.Companion.containsCustomUmlTypeNamed(c.getName())) c.setName(c.getName() + "(1)")
+            while (c!!.alreadyExists(this)) c.name = c.name + "(1)"
+            addUmlClass(c)
         }
-        return null;
+        for (r in project.umlRelations) addUmlRelation(r)
     }
 
-    public void exportProject(Context context, Uri toDestination) {
-        IOUtils.saveFileToExternalStorage(context,this.toJSONObject(context).toString(),toDestination);
-    }
+    companion object {
+        const val JSON_PROJECT_NAME = "ProjectName"
+        const val JSON_PROJECT_CLASS_COUNT = "ProjectClassCount"
+        const val JSON_PROJECT_CLASSES = "ProjectClasses"
+        const val JSON_PROJECT_RELATIONS = "ProjectRelations"
+        const val JSON_PROJECT_PACKAGE_VERSION_CODE = "ProjectPackageVersionCode"
+        const val JSON_PROJECT_ZOOM = "ProjectZoom"
+        const val JSON_PROJECT_X_OFFSET = "ProjectXOffset"
+        const val JSON_PROJECT_Y_OFFSET = "ProjectYOffset"
+        const val PROJECT_DIRECTORY = "projects"
+        fun fromJSONObject(jsonObject: JSONObject, context: Context?): UmlProject? {
+            return try {
+                val project = UmlProject(jsonObject.getString(JSON_PROJECT_NAME), context)
+                project.setAppVersionCode(jsonObject.getInt(JSON_PROJECT_PACKAGE_VERSION_CODE))
+                project.zoom = jsonObject.getDouble(JSON_PROJECT_ZOOM).toFloat()
+                project.xOffset = jsonObject.getDouble(JSON_PROJECT_X_OFFSET).toFloat()
+                project.yOffset = jsonObject.getDouble(JSON_PROJECT_Y_OFFSET).toFloat()
+                project.umlClassCount = jsonObject.getInt(JSON_PROJECT_CLASS_COUNT)
 
-    public static UmlProject importProject(Context context, Uri fromFileUri) {
-        UmlProject umlProject;
-        try {
-            umlProject=UmlProject.fromJSONObject(new JSONObject(IOUtils.readFileFromExternalStorage(context,fromFileUri)),context);
-            for (UmlClass c : umlProject.getUmlClasses()) {
-                while (UmlType.containsPrimitiveUmlTypeNamed(c.getName()))
-                    c.setName(c.getName()+"(1)");
-
-                while (UmlType.containsCustomUmlTypeNamed(c.getName()))
-                    c.setName(c.getName()+"(1)");
+                //copy jsonObject because it is cleared in getClassesFromJSONArray
+                val jsonObjectCopy = JSONObject(jsonObject.toString())
+                for (c in getClassesFromJSONArray(jsonObjectCopy[JSON_PROJECT_CLASSES] as JSONArray)) project.addUmlClass(
+                    c
+                )
+                project.populateClassesFromJSONArray(jsonObject[JSON_PROJECT_CLASSES] as JSONArray)
+                project.umlRelations = getRelationsFromJSONArray(
+                    jsonObject[JSON_PROJECT_RELATIONS] as JSONArray,
+                    project
+                )
+                project
+            } catch (e: JSONException) {
+                null
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            umlProject=null;
         }
-        return umlProject;
+
+        private fun getClassesFromJSONArray(jsonArray: JSONArray): ArrayList<UmlClass?> {
+            //first get classes and their names, to be populated later
+            //otherwise, attributes with custom types can't be created
+            val classes = ArrayList<UmlClass?>()
+            var jsonObject = jsonArray.remove(0) as JSONObject
+            while (jsonObject != null) {
+                classes.add(UmlClass.Companion.fromJSONObject(jsonObject))
+                jsonObject = jsonArray.remove(0) as JSONObject
+            }
+            return classes
+        }
+
+        private fun getRelationsFromJSONArray(
+            jsonArray: JSONArray,
+            project: UmlProject
+        ): ArrayList<UmlRelation?> {
+            val relations = ArrayList<UmlRelation?>()
+            var jsonObject = jsonArray.remove(0) as JSONObject
+            while (jsonObject != null) {
+                relations.add(UmlRelation.Companion.fromJSONObject(jsonObject, project))
+                jsonObject = jsonArray.remove(0) as JSONObject
+            }
+            return relations
+        }
+
+        fun load(context: Context, projectName: String?): UmlProject? {
+            val destination = File(context.filesDir, PROJECT_DIRECTORY)
+            val source = File(destination, projectName)
+            try {
+                return fromJSONObject(
+                    JSONObject(IOUtils.getFileFromInternalStorage(source)),
+                    context
+                )
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+            return null
+        }
+
+        fun importProject(context: Context, fromFileUri: Uri?): UmlProject? {
+            var umlProject: UmlProject?
+            try {
+                umlProject = fromJSONObject(
+                    JSONObject(
+                        IOUtils.readFileFromExternalStorage(
+                            context,
+                            fromFileUri
+                        )
+                    ), context
+                )
+                for (c in umlProject!!.umlClasses) {
+                    while (UmlType.Companion.containsPrimitiveUmlTypeNamed(c.getName())) c.setName(c.getName() + "(1)")
+                    while (UmlType.Companion.containsCustomUmlTypeNamed(c.getName())) c.setName(c.getName() + "(1)")
+                }
+            } catch (e: JSONException) {
+                e.printStackTrace()
+                umlProject = null
+            }
+            return umlProject
+        }
     }
 
-    public void mergeWith(UmlProject project) {
-        for (UmlClass c:project.getUmlClasses()){
-
-            while (UmlType.containsPrimitiveUmlTypeNamed(c.getName()))
-                c.setName(c.getName()+"(1)");
-
-            while (UmlType.containsCustomUmlTypeNamed(c.getName()))
-                c.setName(c.getName()+"(1)");
-
-            while (c.alreadyExists(this))
-                c.setName(c.getName()+"(1)");
-
-            this.addUmlClass(c);
-        }
-
-        for (UmlRelation r:project.getUmlRelations()) this.addUmlRelation(r);
+    //    **********************************************************************************************
+    //    Constructors
+    //    **********************************************************************************************
+    init {
+        umlClasses = ArrayList()
+        umlClassCount = 0
+        umlRelations = ArrayList()
     }
 }

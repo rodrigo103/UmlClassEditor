@@ -1,470 +1,410 @@
-package com.nathaniel.motus.umlclasseditor.model;
+package com.nathaniel.motus.umlclasseditor.model
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import android.view.View.OnTouchListener
+import com.nathaniel.motus.umlclasseditor.view.GraphFragment
+import com.nathaniel.motus.umlclasseditor.model.UmlProject
+import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
+import com.nathaniel.motus.umlclasseditor.model.UmlClass
+import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
+import android.graphics.Typeface
+import android.graphics.DashPathEffect
+import android.content.res.TypedArray
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation
+import com.nathaniel.motus.umlclasseditor.view.GraphView
+import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
+import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
+import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
+import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
+import android.view.MotionEvent
+import android.content.DialogInterface
+import android.widget.TextView
+import android.widget.ImageButton
+import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
+import com.nathaniel.motus.umlclasseditor.view.EditorFragment
+import android.widget.AdapterView.OnItemLongClickListener
+import android.widget.RadioGroup
+import android.widget.ExpandableListView.OnChildClickListener
+import android.widget.EditText
+import android.widget.RadioButton
+import android.widget.ExpandableListView
+import android.widget.LinearLayout
+import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.AdapterItem
+import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
+import com.nathaniel.motus.umlclasseditor.model.AddItemString
+import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import android.widget.AdapterView
+import android.widget.Toast
+import com.nathaniel.motus.umlclasseditor.model.UmlType
+import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
+import android.widget.CheckBox
+import android.widget.Spinner
+import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.TypeMultiplicity
+import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator
+import android.widget.ArrayAdapter
+import com.nathaniel.motus.umlclasseditor.model.MethodParameter
+import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
+import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
+import org.json.JSONArray
+import org.json.JSONObject
+import org.json.JSONException
+import kotlin.jvm.JvmOverloads
+import android.content.pm.PackageManager
+import android.content.pm.PackageInfo
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.navigation.NavigationView
+import androidx.drawerlayout.widget.DrawerLayout
+import android.widget.FrameLayout
+import androidx.core.view.MenuCompat
+import androidx.annotation.RequiresApi
+import android.os.Build
+import android.content.SharedPreferences
+import android.content.SharedPreferences.Editor
+import com.nathaniel.motus.umlclasseditor.controller.MainActivity
+import androidx.core.view.GravityCompat
+import android.content.Intent
+import android.widget.AbsListView
+import android.util.SparseBooleanArray
+import android.text.Html
+import android.app.Activity
+import android.widget.BaseExpandableListAdapter
+import java.util.ArrayList
 
-import java.util.ArrayList;
-
-public class UmlClass extends UmlType {
-
-    public enum UmlClassType{JAVA_CLASS,ABSTRACT_CLASS,INTERFACE,ENUM}
-
-    private UmlClassType mUmlClassType=UmlClassType.JAVA_CLASS;
-    private ArrayList<UmlClassAttribute> mAttributes;
-    private int mUmlClassAttributeCount;
-    private ArrayList<UmlClassMethod> mMethods;
-    private int mUmlClassMethodCount;
-    private ArrayList<UmlEnumValue> mEnumValues;
-    private int mValueCount;
-    private int mClassOrder;
-
-    private float mUmlClassNormalXPos;
-    private float mUmlClassNormalYPos;
-    private float mUmlClassNormalWidth;
-    private float mUmlClassNormalHeight;
-
-    private static final String JSON_CLASS_NAME="ClassName";
-    private static final String JSON_CLASS_INDEX="ClassIndex";
-    private static final String JSON_CLASS_CLASS_TYPE="ClassClassType";
-    private static final String JSON_CLASS_ATTRIBUTES="ClassAttributes";
-    private static final String JSON_CLASS_METHODS="ClassMethods";
-    private static final String JSON_CLASS_VALUES="ClassValues";
-    private static final String JSON_CLASS_NORMAL_XPOS="ClassNormalXPos";
-    private static final String JSON_CLASS_NORMAL_YPOS="ClassNormalYPos";
-    private static final String JSON_CLASS_ATTRIBUTE_COUNT ="ClassAttributeCount";
-    private static final String JSON_CLASS_METHOD_COUNT ="ClassMethodCount";
-    private static final String JSON_CLASS_VALUE_COUNT ="ClassValueCount";
-
-//    **********************************************************************************************
-//    Constructors
-//    **********************************************************************************************
-
-    public UmlClass(int classOrder) {
-        mAttributes=new ArrayList<>();
-        mMethods=new ArrayList<>();
-        mEnumValues=new ArrayList<>();
-        mUmlClassAttributeCount=0;
-        mUmlClassMethodCount=0;
-        mValueCount=0;
-        mClassOrder = classOrder;
+class UmlClass : UmlType {
+    enum class UmlClassType {
+        JAVA_CLASS, ABSTRACT_CLASS, INTERFACE, ENUM
     }
 
-    public UmlClass(String name) {
-        this(name,UmlClassType.JAVA_CLASS);
+    //    **********************************************************************************************
+    //    Getters and setters
+    //    **********************************************************************************************
+    var umlClassType = UmlClassType.JAVA_CLASS
+    var attributes: ArrayList<UmlClassAttribute?>
+    var umlClassAttributeCount: Int
+    var methods: ArrayList<UmlClassMethod?>
+    var umlClassMethodCount: Int
+    var values: ArrayList<UmlEnumValue?>
+    var valueCount: Int
+    var classOrder = 0
+    var umlClassNormalXPos = 0f
+    var umlClassNormalYPos = 0f
+    var umlClassNormalWidth = 0f
+    var umlClassNormalHeight = 0f
+
+    //    **********************************************************************************************
+    //    Constructors
+    //    **********************************************************************************************
+    constructor(classOrder: Int) {
+        attributes = ArrayList()
+        methods = ArrayList()
+        values = ArrayList()
+        umlClassAttributeCount = 0
+        umlClassMethodCount = 0
+        valueCount = 0
+        this.classOrder = classOrder
     }
 
-    public UmlClass(String name, UmlClassType umlClassType) {
-        super(name,TypeLevel.PROJECT);
-        mUmlClassType = umlClassType;
-        mAttributes = new ArrayList<>();
-        mUmlClassAttributeCount =0;
-        mMethods =new ArrayList<>();
-        mUmlClassMethodCount =0;
-        mEnumValues =new ArrayList<>();
-        mValueCount =0;
+    @JvmOverloads
+    constructor(name: String?, umlClassType: UmlClassType = UmlClassType.JAVA_CLASS) : super(
+        name,
+        TypeLevel.PROJECT
+    ) {
+        this.umlClassType = umlClassType
+        attributes = ArrayList()
+        umlClassAttributeCount = 0
+        methods = ArrayList()
+        umlClassMethodCount = 0
+        values = ArrayList()
+        valueCount = 0
     }
 
-    public UmlClass(String name, int classOrder, UmlClassType umlClassType,
-                    ArrayList<UmlClassAttribute> attributes, int attributeCount,
-                    ArrayList<UmlClassMethod> methods, int methodCount,
-                    ArrayList<UmlEnumValue> values, int valueCount,
-                    float umlClassNormalXPos, float umlClassNormalYPos) {
-        super(name,TypeLevel.PROJECT);
-        mClassOrder = classOrder;
-        mUmlClassType = umlClassType;
-        mAttributes = attributes;
-        mUmlClassAttributeCount =attributeCount;
-        mMethods = methods;
-        mUmlClassMethodCount =methodCount;
-        mEnumValues = values;
-        mValueCount =valueCount;
-        mUmlClassNormalXPos = umlClassNormalXPos;
-        mUmlClassNormalYPos = umlClassNormalYPos;
-    }
-    public UmlClass(String name, UmlClassType umlClassType,
-                    ArrayList<UmlClassAttribute> attributes,
-                    ArrayList<UmlClassMethod> methods,
-                    ArrayList<UmlEnumValue> values,
-                    float umlClassNormalXPos, float umlClassNormalYPos) {
-        super(name,TypeLevel.PROJECT);
-        mUmlClassType = umlClassType;
-        mAttributes = attributes;
-        mUmlClassAttributeCount =0;
-        mMethods = methods;
-        mUmlClassMethodCount =0;
-        mEnumValues = values;
-        mValueCount =0;
-        mUmlClassNormalXPos = umlClassNormalXPos;
-        mUmlClassNormalYPos = umlClassNormalYPos;
+    constructor(
+        name: String?, classOrder: Int, umlClassType: UmlClassType,
+        attributes: ArrayList<UmlClassAttribute?>, attributeCount: Int,
+        methods: ArrayList<UmlClassMethod?>, methodCount: Int,
+        values: ArrayList<UmlEnumValue?>, valueCount: Int,
+        umlClassNormalXPos: Float, umlClassNormalYPos: Float
+    ) : super(name, TypeLevel.PROJECT) {
+        this.classOrder = classOrder
+        this.umlClassType = umlClassType
+        this.attributes = attributes
+        umlClassAttributeCount = attributeCount
+        this.methods = methods
+        umlClassMethodCount = methodCount
+        this.values = values
+        this.valueCount = valueCount
+        this.umlClassNormalXPos = umlClassNormalXPos
+        this.umlClassNormalYPos = umlClassNormalYPos
     }
 
-
-//    **********************************************************************************************
-//    Getters and setters
-//    **********************************************************************************************
-
-    public UmlClassType getUmlClassType() {
-        return mUmlClassType;
+    constructor(
+        name: String?, umlClassType: UmlClassType,
+        attributes: ArrayList<UmlClassAttribute?>,
+        methods: ArrayList<UmlClassMethod?>,
+        values: ArrayList<UmlEnumValue?>,
+        umlClassNormalXPos: Float, umlClassNormalYPos: Float
+    ) : super(name, TypeLevel.PROJECT) {
+        this.umlClassType = umlClassType
+        this.attributes = attributes
+        umlClassAttributeCount = 0
+        this.methods = methods
+        umlClassMethodCount = 0
+        this.values = values
+        valueCount = 0
+        this.umlClassNormalXPos = umlClassNormalXPos
+        this.umlClassNormalYPos = umlClassNormalYPos
     }
 
-    public void setUmlClassType(UmlClassType umlClassType) {
-        mUmlClassType = umlClassType;
+    val normalRightEnd: Float
+        get() = umlClassNormalXPos + umlClassNormalWidth
+    val normalBottomEnd: Float
+        get() = umlClassNormalYPos + umlClassNormalHeight
+    override var name: String?
+        get() = super.getName()
+        set(name) {
+            super.setName(name)
+        }
+
+    fun findAttributeByOrder(attributeOrder: Int): UmlClassAttribute? {
+        for (a in attributes) if (a.getAttributeOrder() == attributeOrder) return a
+        return null
     }
 
-    public float getUmlClassNormalXPos() {
-        return mUmlClassNormalXPos;
+    fun findMethodByOrder(methodOrder: Int): UmlClassMethod? {
+        for (m in methods) if (m.getMethodOrder() == methodOrder) return m
+        return null
     }
 
-    public void setUmlClassNormalXPos(float umlClassNormalXPos) {
-        mUmlClassNormalXPos = umlClassNormalXPos;
+    fun findValueByOrder(valueOrder: Int): UmlEnumValue? {
+        for (v in values) if (v.getValueOrder() == valueOrder) return v
+        return null
     }
 
-    public float getUmlClassNormalYPos() {
-        return mUmlClassNormalYPos;
+    fun getAttribute(attributeName: String): UmlClassAttribute? {
+        for (a in attributes) if (a.getName() == attributeName) return a
+        return null
     }
 
-    public void setUmlClassNormalYPos(float umlClassNormalYPos) {
-        mUmlClassNormalYPos = umlClassNormalYPos;
+    //    **********************************************************************************************
+    //    Modifiers
+    //    **********************************************************************************************
+    fun addMethod(method: UmlClassMethod?) {
+        methods.add(method)
+        umlClassMethodCount++
     }
 
-    public float getUmlClassNormalWidth() {
-        return mUmlClassNormalWidth;
+    fun removeMethod(method: UmlClassMethod?) {
+        methods.remove(method)
     }
 
-    public void setUmlClassNormalWidth(float umlClassNormalWidth) {
-        mUmlClassNormalWidth = umlClassNormalWidth;
+    fun addAttribute(attribute: UmlClassAttribute?) {
+        attributes.add(attribute)
+        umlClassAttributeCount++
     }
 
-    public float getUmlClassNormalHeight() {
-        return mUmlClassNormalHeight;
+    fun removeAttribute(attribute: UmlClassAttribute?) {
+        attributes.remove(attribute)
     }
 
-    public void setUmlClassNormalHeight(float umlClassNormalHeight) {
-        mUmlClassNormalHeight = umlClassNormalHeight;
+    fun addValue(value: UmlEnumValue?) {
+        values.add(value)
+        valueCount++
     }
 
-    public ArrayList<UmlClassAttribute> getAttributes() {
-        return mAttributes;
+    fun removeValue(value: UmlEnumValue?) {
+        values.remove(value)
     }
 
-    public ArrayList<UmlClassMethod> getMethods() {
-        return mMethods;
+    fun incrementUmlClassAttributeCount() {
+        umlClassAttributeCount++
     }
 
-    public ArrayList<UmlEnumValue> getValues() {
-        return mEnumValues;
+    fun incrementUmlClassMethodCount() {
+        umlClassMethodCount++
     }
 
-    public float getNormalRightEnd() {
-        return mUmlClassNormalXPos+mUmlClassNormalWidth;
+    fun incrementValueCount() {
+        valueCount++
     }
 
-    public float getNormalBottomEnd() {
-        return mUmlClassNormalYPos+mUmlClassNormalHeight;
+    //    **********************************************************************************************
+    //    Test methods
+    //    **********************************************************************************************
+    fun containsPoint(absoluteX: Float, absoluteY: Float): Boolean {
+        return absoluteX <= umlClassNormalXPos + umlClassNormalWidth && absoluteX >= umlClassNormalXPos && absoluteY <= umlClassNormalYPos + umlClassNormalHeight && absoluteY >= umlClassNormalYPos
     }
 
-    public void setAttributes(ArrayList<UmlClassAttribute> attributes) {
-        mAttributes = attributes;
-    }
-
-    public void setMethods(ArrayList<UmlClassMethod> methods) {
-        mMethods = methods;
-    }
-
-    public void setValues(ArrayList<UmlEnumValue> values) {
-        mEnumValues = values;
-    }
-
-    public void setUmlClassAttributeCount(int umlClassAttributeCount) {
-        mUmlClassAttributeCount = umlClassAttributeCount;
-    }
-
-    public void setUmlClassMethodCount(int umlClassMethodCount) {
-        mUmlClassMethodCount = umlClassMethodCount;
-    }
-
-    public void setValueCount(int valueCount) {
-        mValueCount = valueCount;
-    }
-
-    public int getUmlClassAttributeCount() {
-        return mUmlClassAttributeCount;
-    }
-
-    public int getUmlClassMethodCount() {
-        return mUmlClassMethodCount;
-    }
-
-    public int getValueCount() {
-        return mValueCount;
-    }
-
-    @Override
-    public void setName(String name) {
-        super.setName(name);
-    }
-
-    @Override
-    public String getName() {
-        return super.getName();
-    }
-
-    public int getClassOrder() {
-        return mClassOrder;
-    }
-
-    public void setClassOrder(int classOrder) {
-        mClassOrder = classOrder;
-    }
-
-    public UmlClassAttribute findAttributeByOrder(int attributeOrder) {
-        for (UmlClassAttribute a:mAttributes)
-            if (a.getAttributeOrder()==attributeOrder) return a;
-        return null;
-    }
-
-    public UmlClassMethod findMethodByOrder(int methodOrder) {
-        for (UmlClassMethod m:mMethods)
-            if (m.getMethodOrder()==methodOrder) return m;
-            return null;
-    }
-
-    public UmlEnumValue findValueByOrder(int valueOrder) {
-        for (UmlEnumValue v:mEnumValues)
-            if (v.getValueOrder()==valueOrder) return v;
-            return null;
-    }
-
-    public UmlClassAttribute getAttribute(String attributeName) {
-        for (UmlClassAttribute a:mAttributes)
-            if (a.getName().equals(attributeName))
-                return a;
-        return null;
-    }
-
-//    **********************************************************************************************
-//    Modifiers
-//    **********************************************************************************************
-
-    public void addMethod(UmlClassMethod method) {
-        mMethods.add(method);
-        mUmlClassMethodCount++;
-    }
-
-    public void removeMethod(UmlClassMethod method) {
-        mMethods.remove(method);
-    }
-
-    public void addAttribute(UmlClassAttribute attribute) {
-        mAttributes.add(attribute);
-        mUmlClassAttributeCount++;
-    }
-
-    public void removeAttribute(UmlClassAttribute attribute) {
-        mAttributes.remove(attribute);
-    }
-
-    public void addValue(UmlEnumValue value) {
-        mEnumValues.add(value);
-        mValueCount++;
-    }
-
-    public void removeValue(UmlEnumValue value) {
-        mEnumValues.remove(value);
-    }
-
-    public void incrementUmlClassAttributeCount() {
-        mUmlClassAttributeCount++;
-    }
-
-    public void incrementUmlClassMethodCount() {
-        mUmlClassMethodCount++;
-    }
-
-    public void incrementValueCount() {
-        mValueCount++;
-    }
-
-//    **********************************************************************************************
-//    Test methods
-//    **********************************************************************************************
-
-    public boolean containsPoint(float absoluteX, float absoluteY) {
-        return  (absoluteX<=mUmlClassNormalXPos+mUmlClassNormalWidth &&
-                absoluteX >= mUmlClassNormalXPos &&
-                absoluteY<=mUmlClassNormalYPos+mUmlClassNormalHeight &&
-                absoluteY>=mUmlClassNormalYPos);
-    }
-
-    public boolean isSouthOf(UmlClass umlClass) {
+    fun isSouthOf(umlClass: UmlClass?): Boolean {
         //is this in South quarter of umlClass ?
-        return (this.getUmlClassNormalYPos()>=umlClass.getNormalBottomEnd() &&
-                this.getNormalRightEnd()>=umlClass.getUmlClassNormalXPos()-this.getUmlClassNormalYPos()+umlClass.getNormalBottomEnd() &&
-                this.getUmlClassNormalXPos()<=umlClass.getNormalRightEnd()+this.getUmlClassNormalYPos()-umlClass.getNormalBottomEnd());
+        return umlClassNormalYPos >= umlClass!!.normalBottomEnd && normalRightEnd >= umlClass.umlClassNormalXPos - umlClassNormalYPos + umlClass.normalBottomEnd && umlClassNormalXPos <= umlClass.normalRightEnd + umlClassNormalYPos - umlClass.normalBottomEnd
     }
 
-    public boolean isNorthOf(UmlClass umlClass) {
+    fun isNorthOf(umlClass: UmlClass?): Boolean {
         //is this in North quarter of umlClass ?
-        return (this.getNormalBottomEnd()<=umlClass.getUmlClassNormalYPos() &&
-                this.getNormalRightEnd()>=umlClass.getUmlClassNormalXPos()-umlClass.getUmlClassNormalYPos()+this.getNormalBottomEnd() &&
-                this.getUmlClassNormalXPos()<=umlClass.getNormalRightEnd()+umlClass.getUmlClassNormalYPos()-this.getNormalBottomEnd());
+        return normalBottomEnd <= umlClass!!.umlClassNormalYPos && normalRightEnd >= umlClass.umlClassNormalXPos - umlClass.umlClassNormalYPos + normalBottomEnd && umlClassNormalXPos <= umlClass.normalRightEnd + umlClass.umlClassNormalYPos - normalBottomEnd
     }
 
-    public boolean isWestOf(UmlClass umlClass) {
+    fun isWestOf(umlClass: UmlClass?): Boolean {
         //is this in West quarter of umlClass ?
-        return (this.getNormalRightEnd()<=umlClass.getUmlClassNormalXPos() &&
-                this.getNormalBottomEnd()>=umlClass.getUmlClassNormalYPos()-umlClass.getUmlClassNormalXPos()+this.getNormalRightEnd() &&
-                this.getUmlClassNormalYPos()<=umlClass.getNormalBottomEnd()+umlClass.getUmlClassNormalXPos()-this.getNormalRightEnd());
+        return normalRightEnd <= umlClass!!.umlClassNormalXPos && normalBottomEnd >= umlClass.umlClassNormalYPos - umlClass.umlClassNormalXPos + normalRightEnd && umlClassNormalYPos <= umlClass.normalBottomEnd + umlClass.umlClassNormalXPos - normalRightEnd
     }
 
-    public boolean isEastOf(UmlClass umlClass) {
+    fun isEastOf(umlClass: UmlClass?): Boolean {
         //is this in East Quarter of umlClass ?
-        return (this.getUmlClassNormalXPos()>=umlClass.getNormalRightEnd() &&
-                this.getNormalBottomEnd()>=umlClass.getUmlClassNormalYPos()-this.getUmlClassNormalXPos()+umlClass.getNormalRightEnd() &&
-                this.getUmlClassNormalYPos()<=umlClass.getNormalBottomEnd()+this.getUmlClassNormalXPos()-umlClass.getNormalRightEnd());
+        return umlClassNormalXPos >= umlClass!!.normalRightEnd && normalBottomEnd >= umlClass.umlClassNormalYPos - umlClassNormalXPos + umlClass.normalRightEnd && umlClassNormalYPos <= umlClass.normalBottomEnd + umlClassNormalXPos - umlClass.normalRightEnd
     }
 
-    public boolean isInvolvedInRelation(UmlRelation umlRelation) {
-        return (this==umlRelation.getRelationOriginClass()||this==umlRelation.getRelationEndClass());
+    fun isInvolvedInRelation(umlRelation: UmlRelation?): Boolean {
+        return this === umlRelation.getRelationOriginClass() || this === umlRelation.getRelationEndClass()
     }
 
-    public boolean alreadyExists(UmlProject inProject) {
+    fun alreadyExists(inProject: UmlProject): Boolean {
         //check whether class name already exists
-
-        for (UmlClass c:inProject.getUmlClasses())
-            if (this.getName().equals(c.getName())) return true;
-
-        return false;
+        for (c in inProject.umlClasses) if (name == c!!.name) return true
+        return false
     }
 
-    public boolean containsAttributeNamed(String attributeName) {
-        for (UmlClassAttribute a:mAttributes)
-            if (a.getName()!=null && a.getName().equals(attributeName))
-                return true;
-        return false;
+    fun containsAttributeNamed(attributeName: String): Boolean {
+        for (a in attributes) if (a.getName() != null && a.getName() == attributeName) return true
+        return false
     }
 
-    public boolean containsEquivalentMethodTo(UmlClassMethod method) {
-        for (UmlClassMethod m:mMethods)
-            if (m.isEquivalentTo(method))
-                return true;
-        return false;
+    fun containsEquivalentMethodTo(method: UmlClassMethod?): Boolean {
+        for (m in methods) if (m!!.isEquivalentTo(method)) return true
+        return false
     }
 
-//    **********************************************************************************************
-//    JSON methods
-//    **********************************************************************************************
-
-    public JSONObject toJSONObject() {
-        JSONObject jsonObject =new JSONObject();
-
-        try {
-            jsonObject.put(JSON_CLASS_NAME, this.getName().toString());
-            jsonObject.put(JSON_CLASS_INDEX, mClassOrder);
-            jsonObject.put(JSON_CLASS_CLASS_TYPE, mUmlClassType);
-            jsonObject.put(JSON_CLASS_ATTRIBUTES, getAttributesToJSONArray());
-            jsonObject.put(JSON_CLASS_ATTRIBUTE_COUNT, mUmlClassAttributeCount);
-            jsonObject.put(JSON_CLASS_METHODS, getMethodsToJSONArray());
-            jsonObject.put(JSON_CLASS_METHOD_COUNT, mUmlClassMethodCount);
-            jsonObject.put(JSON_CLASS_VALUES, getValuesToJSONArray());
-            jsonObject.put(JSON_CLASS_VALUE_COUNT, mValueCount);
-            jsonObject.put(JSON_CLASS_NORMAL_XPOS, mUmlClassNormalXPos);
-            jsonObject.put(JSON_CLASS_NORMAL_YPOS, mUmlClassNormalYPos);
-            return jsonObject;
-        } catch (JSONException e) {
-            return null;
+    //    **********************************************************************************************
+    //    JSON methods
+    //    **********************************************************************************************
+    fun toJSONObject(): JSONObject? {
+        val jsonObject = JSONObject()
+        return try {
+            jsonObject.put(JSON_CLASS_NAME, name.toString())
+            jsonObject.put(JSON_CLASS_INDEX, classOrder)
+            jsonObject.put(JSON_CLASS_CLASS_TYPE, umlClassType)
+            jsonObject.put(JSON_CLASS_ATTRIBUTES, attributesToJSONArray)
+            jsonObject.put(JSON_CLASS_ATTRIBUTE_COUNT, umlClassAttributeCount)
+            jsonObject.put(JSON_CLASS_METHODS, methodsToJSONArray)
+            jsonObject.put(JSON_CLASS_METHOD_COUNT, umlClassMethodCount)
+            jsonObject.put(JSON_CLASS_VALUES, valuesToJSONArray)
+            jsonObject.put(JSON_CLASS_VALUE_COUNT, valueCount)
+            jsonObject.put(JSON_CLASS_NORMAL_XPOS, umlClassNormalXPos.toDouble())
+            jsonObject.put(JSON_CLASS_NORMAL_YPOS, umlClassNormalYPos.toDouble())
+            jsonObject
+        } catch (e: JSONException) {
+            null
         }
     }
 
-    //we need to first create classes with their names
-    //in order to have them usable to create UmlTyped objects
+    private val attributesToJSONArray: JSONArray
+        private get() {
+            val jsonArray = JSONArray()
+            for (a in attributes) jsonArray.put(a!!.toJSONObject())
+            return jsonArray
+        }
+    private val methodsToJSONArray: JSONArray
+        private get() {
+            val jsonArray = JSONArray()
+            for (m in methods) jsonArray.put(m!!.toJSONObject())
+            return jsonArray
+        }
+    private val valuesToJSONArray: JSONArray
+        private get() {
+            val jsonArray = JSONArray()
+            for (v in values) jsonArray.put(v!!.toJSONObject())
+            return jsonArray
+        }
 
-    public static UmlClass fromJSONObject(JSONObject jsonObject) {
-        try {
-            return new UmlClass(jsonObject.getString(JSON_CLASS_NAME));
-        } catch (JSONException e) {
-            return null;
+    companion object {
+        private const val JSON_CLASS_NAME = "ClassName"
+        private const val JSON_CLASS_INDEX = "ClassIndex"
+        private const val JSON_CLASS_CLASS_TYPE = "ClassClassType"
+        private const val JSON_CLASS_ATTRIBUTES = "ClassAttributes"
+        private const val JSON_CLASS_METHODS = "ClassMethods"
+        private const val JSON_CLASS_VALUES = "ClassValues"
+        private const val JSON_CLASS_NORMAL_XPOS = "ClassNormalXPos"
+        private const val JSON_CLASS_NORMAL_YPOS = "ClassNormalYPos"
+        private const val JSON_CLASS_ATTRIBUTE_COUNT = "ClassAttributeCount"
+        private const val JSON_CLASS_METHOD_COUNT = "ClassMethodCount"
+        private const val JSON_CLASS_VALUE_COUNT = "ClassValueCount"
+
+        //we need to first create classes with their names
+        //in order to have them usable to create UmlTyped objects
+        fun fromJSONObject(jsonObject: JSONObject): UmlClass? {
+            return try {
+                UmlClass(jsonObject.getString(JSON_CLASS_NAME))
+            } catch (e: JSONException) {
+                null
+            }
+        }
+
+        //and then populate them with their attributes
+        fun populateUmlClassFromJSONObject(jsonObject: JSONObject, project: UmlProject) {
+            //read a class JSONObject and populate the already created class
+            try {
+                val umlClass = project.getUmlClass(jsonObject.getString(JSON_CLASS_NAME))
+                umlClass!!.classOrder = jsonObject.getInt(JSON_CLASS_INDEX)
+                umlClass.umlClassType = UmlClassType.valueOf(
+                    jsonObject.getString(
+                        JSON_CLASS_CLASS_TYPE
+                    )
+                )
+                umlClass.attributes = getAttributesFromJSONArray(
+                    jsonObject.getJSONArray(
+                        JSON_CLASS_ATTRIBUTES
+                    )
+                )
+                umlClass.methods = getMethodsFromJSONArray(
+                    jsonObject.getJSONArray(
+                        JSON_CLASS_METHODS
+                    )
+                )
+                umlClass.values = getValuesFromJSONArray(jsonObject.getJSONArray(JSON_CLASS_VALUES))
+                umlClass.umlClassNormalXPos = jsonObject.getInt(JSON_CLASS_NORMAL_XPOS).toFloat()
+                umlClass.umlClassNormalYPos = jsonObject.getInt(JSON_CLASS_NORMAL_YPOS).toFloat()
+                umlClass.umlClassAttributeCount = jsonObject.getInt(JSON_CLASS_ATTRIBUTE_COUNT)
+                umlClass.umlClassMethodCount = jsonObject.getInt(JSON_CLASS_METHOD_COUNT)
+                umlClass.valueCount = jsonObject.getInt(JSON_CLASS_VALUE_COUNT)
+            } catch (ignored: JSONException) {
+            }
+        }
+
+        private fun getAttributesFromJSONArray(jsonArray: JSONArray): ArrayList<UmlClassAttribute?> {
+            val umlClassAttributes = ArrayList<UmlClassAttribute?>()
+            var jsonAttribute = jsonArray.remove(0) as JSONObject
+            while (jsonAttribute != null) {
+                umlClassAttributes.add(UmlClassAttribute.Companion.fromJSONObject(jsonAttribute))
+                jsonAttribute = jsonArray.remove(0) as JSONObject
+            }
+            return umlClassAttributes
+        }
+
+        private fun getMethodsFromJSONArray(jsonArray: JSONArray): ArrayList<UmlClassMethod?> {
+            val umlClassMethods = ArrayList<UmlClassMethod?>()
+            var jsonMethod = jsonArray.remove(0) as JSONObject
+            while (jsonMethod != null) {
+                umlClassMethods.add(UmlClassMethod.Companion.fromJSONObject(jsonMethod))
+                jsonMethod = jsonArray.remove(0) as JSONObject
+            }
+            return umlClassMethods
+        }
+
+        private fun getValuesFromJSONArray(jsonArray: JSONArray): ArrayList<UmlEnumValue?> {
+            val values = ArrayList<UmlEnumValue?>()
+            var jsonValue = jsonArray.remove(0) as JSONObject
+            while (jsonValue != null) {
+                values.add(UmlEnumValue.Companion.fromJSONObject(jsonValue))
+                jsonValue = jsonArray.remove(0) as JSONObject
+            }
+            return values
         }
     }
-
-    //and then populate them with their attributes
-
-    public static void populateUmlClassFromJSONObject(JSONObject jsonObject, UmlProject project) {
-        //read a class JSONObject and populate the already created class
-
-        try {
-            UmlClass umlClass=project.getUmlClass(jsonObject.getString(JSON_CLASS_NAME));
-
-            umlClass.setClassOrder(jsonObject.getInt(JSON_CLASS_INDEX));
-            umlClass.setUmlClassType(UmlClassType.valueOf(jsonObject.getString(JSON_CLASS_CLASS_TYPE)));
-            umlClass.setAttributes(getAttributesFromJSONArray(jsonObject.getJSONArray(JSON_CLASS_ATTRIBUTES)));
-            umlClass.setMethods(getMethodsFromJSONArray(jsonObject.getJSONArray(JSON_CLASS_METHODS)));
-            umlClass.setValues(getValuesFromJSONArray(jsonObject.getJSONArray(JSON_CLASS_VALUES)));
-            umlClass.setUmlClassNormalXPos(jsonObject.getInt(JSON_CLASS_NORMAL_XPOS));
-            umlClass.setUmlClassNormalYPos(jsonObject.getInt(JSON_CLASS_NORMAL_YPOS));
-            umlClass.setUmlClassAttributeCount(jsonObject.getInt(JSON_CLASS_ATTRIBUTE_COUNT));
-            umlClass.setUmlClassMethodCount(jsonObject.getInt(JSON_CLASS_METHOD_COUNT));
-            umlClass.setValueCount(jsonObject.getInt(JSON_CLASS_VALUE_COUNT));
-
-        } catch (JSONException ignored) {
-
-        }
-    }
-
-    private JSONArray getAttributesToJSONArray() {
-        JSONArray jsonArray = new JSONArray();
-
-        for (UmlClassAttribute a: mAttributes) jsonArray.put(a.toJSONObject());
-        return jsonArray;
-    }
-
-    private static ArrayList<UmlClassAttribute> getAttributesFromJSONArray(JSONArray jsonArray) {
-        ArrayList<UmlClassAttribute> umlClassAttributes = new ArrayList<>();
-
-        JSONObject jsonAttribute=(JSONObject) jsonArray.remove(0);
-        while (jsonAttribute != null) {
-            umlClassAttributes.add(UmlClassAttribute.fromJSONObject(jsonAttribute));
-            jsonAttribute = (JSONObject) jsonArray.remove(0);
-        }
-        return umlClassAttributes;
-    }
-
-    private JSONArray getMethodsToJSONArray() {
-        JSONArray jsonArray=new JSONArray();
-
-        for (UmlClassMethod m: mMethods) jsonArray.put(m.toJSONObject());
-        return jsonArray;
-    }
-
-    private static ArrayList<UmlClassMethod> getMethodsFromJSONArray(JSONArray jsonArray) {
-        ArrayList<UmlClassMethod> umlClassMethods = new ArrayList<>();
-
-        JSONObject jsonMethod=(JSONObject)jsonArray.remove(0);
-        while (jsonMethod != null) {
-            umlClassMethods.add(UmlClassMethod.fromJSONObject(jsonMethod));
-            jsonMethod=(JSONObject)jsonArray.remove(0);
-        }
-        return umlClassMethods;
-    }
-
-    private JSONArray getValuesToJSONArray() {
-        JSONArray jsonArray=new JSONArray();
-
-        for (UmlEnumValue v: mEnumValues) jsonArray.put(v.toJSONObject());
-        return jsonArray;
-    }
-
-    private static ArrayList<UmlEnumValue> getValuesFromJSONArray(JSONArray jsonArray) {
-        ArrayList<UmlEnumValue> values = new ArrayList<>();
-
-        JSONObject jsonValue = (JSONObject)jsonArray.remove(0);
-        while (jsonValue != null) {
-            values.add(UmlEnumValue.fromJSONObject(jsonValue));
-            jsonValue=(JSONObject) jsonArray.remove(0);
-        }
-        return values;
-    }
-
-
 }

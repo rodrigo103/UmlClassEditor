@@ -1,7 +1,5 @@
-package com.nathaniel.motus.umlclasseditor.model;
+package com.nathaniel.motus.umlclasseditor.model
 
-public enum Visibility {
-    PUBLIC,
-    PROTECTED,
-    PRIVATE
+enum class Visibility {
+    PUBLIC, PROTECTED, PRIVATE
 }

@@ -1,300 +1,303 @@
-package com.nathaniel.motus.umlclasseditor.model;
+package com.nathaniel.motus.umlclasseditor.model
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import android.view.View.OnTouchListener
+import com.nathaniel.motus.umlclasseditor.view.GraphFragment
+import com.nathaniel.motus.umlclasseditor.model.UmlProject
+import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
+import com.nathaniel.motus.umlclasseditor.model.UmlClass
+import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
+import android.graphics.Typeface
+import android.graphics.DashPathEffect
+import android.content.res.TypedArray
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation
+import com.nathaniel.motus.umlclasseditor.view.GraphView
+import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
+import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
+import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
+import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
+import android.view.MotionEvent
+import android.content.DialogInterface
+import android.widget.TextView
+import android.widget.ImageButton
+import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
+import com.nathaniel.motus.umlclasseditor.view.EditorFragment
+import android.widget.AdapterView.OnItemLongClickListener
+import android.widget.RadioGroup
+import android.widget.ExpandableListView.OnChildClickListener
+import android.widget.EditText
+import android.widget.RadioButton
+import android.widget.ExpandableListView
+import android.widget.LinearLayout
+import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.AdapterItem
+import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
+import com.nathaniel.motus.umlclasseditor.model.AddItemString
+import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import android.widget.AdapterView
+import android.widget.Toast
+import com.nathaniel.motus.umlclasseditor.model.UmlType
+import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
+import android.widget.CheckBox
+import android.widget.Spinner
+import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
+import com.nathaniel.motus.umlclasseditor.model.TypeMultiplicity
+import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator
+import android.widget.ArrayAdapter
+import com.nathaniel.motus.umlclasseditor.model.MethodParameter
+import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
+import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
+import org.json.JSONArray
+import org.json.JSONObject
+import org.json.JSONException
+import kotlin.jvm.JvmOverloads
+import android.content.pm.PackageManager
+import android.content.pm.PackageInfo
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.navigation.NavigationView
+import androidx.drawerlayout.widget.DrawerLayout
+import android.widget.FrameLayout
+import androidx.core.view.MenuCompat
+import androidx.annotation.RequiresApi
+import android.os.Build
+import android.content.SharedPreferences
+import android.content.SharedPreferences.Editor
+import com.nathaniel.motus.umlclasseditor.controller.MainActivity
+import androidx.core.view.GravityCompat
+import android.content.Intent
+import android.widget.AbsListView
+import android.util.SparseBooleanArray
+import android.text.Html
+import android.app.Activity
+import android.widget.BaseExpandableListAdapter
+import java.util.ArrayList
 
-import java.util.ArrayList;
+class UmlClassMethod : AdapterItem {
+    //    **********************************************************************************************
+    //    Getters and setters
+    //    **********************************************************************************************
+    override var name: String? = null
+    var methodOrder: Int
+    var visibility = Visibility.PRIVATE
+    var isStatic = false
+    var umlType: UmlType? = null
+    var typeMultiplicity = TypeMultiplicity.SINGLE
+    var arrayDimension = 1
+    var parameters: ArrayList<MethodParameter?>
+        private set
+    var parameterCount: Int
 
-public class UmlClassMethod implements AdapterItem{
-
-    private String mName;
-    private int mMethodOrder;
-    private Visibility mVisibility=Visibility.PRIVATE;
-    private boolean mStatic =false;
-    private UmlType mUmlType;
-    private TypeMultiplicity mTypeMultiplicity=TypeMultiplicity.SINGLE;
-    private int mArrayDimension =1;
-    private ArrayList<MethodParameter> mParameters;
-    private int mParameterCount;
-
-    public static final String JSON_CLASS_METHOD_NAME="ClassMethodName";
-    public static final String JSON_CLASS_METHOD_VISIBILITY="ClassMethodVisibility";
-    public static final String JSON_CLASS_METHOD_STATIC="ClassMethodStatic";
-    public static final String JSON_CLASS_METHOD_TYPE="ClassMethodType";
-    public static final String JSON_CLASS_METHOD_TYPE_MULTIPLICITY="ClassMethodTypeMultiplicity";
-    public static final String JSON_CLASS_METHOD_ARRAY_DIMENSION="ClassMethodArrayDimension";
-    public static final String JSON_CLASS_METHOD_PARAMETERS="ClassMethodParameters";
-    public static final String JSON_CLASS_METHOD_PARAMETER_COUNT="ClassMethodParameterCount";
-    public static final String JSON_CLASS_METHOD_INDEX="ClassMethodIndex";
-
-//    **********************************************************************************************
-//    Constructors
-//    **********************************************************************************************
-
-    public UmlClassMethod(String name, int methodOrder, Visibility visibility, boolean aStatic, UmlType umlType, TypeMultiplicity typeMultiplicity, int arrayDimension) {
-        mName = name;
-        mMethodOrder = methodOrder;
-        mVisibility = visibility;
-        mStatic = aStatic;
-        mUmlType = umlType;
-        mTypeMultiplicity = typeMultiplicity;
-        mArrayDimension = arrayDimension;
-        mParameters=new ArrayList<>();
-        mParameterCount=0;
+    //    **********************************************************************************************
+    //    Constructors
+    //    **********************************************************************************************
+    constructor(
+        name: String?,
+        methodOrder: Int,
+        visibility: Visibility,
+        aStatic: Boolean,
+        umlType: UmlType?,
+        typeMultiplicity: TypeMultiplicity,
+        arrayDimension: Int
+    ) {
+        this.name = name
+        this.methodOrder = methodOrder
+        this.visibility = visibility
+        isStatic = aStatic
+        this.umlType = umlType
+        this.typeMultiplicity = typeMultiplicity
+        this.arrayDimension = arrayDimension
+        parameters = ArrayList()
+        parameterCount = 0
     }
 
-    public UmlClassMethod(String mName, int methodOrder, Visibility mVisibility, boolean mStatic, UmlType mUmlType, TypeMultiplicity mTypeMultiplicity, int mArrayDimension, ArrayList<MethodParameter> mParameters, int parameterCount) {
-        this.mName = mName;
-        this.mMethodOrder = methodOrder;
-        this.mVisibility = mVisibility;
-        this.mStatic = mStatic;
-        this.mUmlType = mUmlType;
-        this.mTypeMultiplicity = mTypeMultiplicity;
-        this.mArrayDimension = mArrayDimension;
-        this.mParameters = mParameters;
-        this.mParameterCount=parameterCount;
+    constructor(
+        mName: String?,
+        methodOrder: Int,
+        mVisibility: Visibility,
+        mStatic: Boolean,
+        mUmlType: UmlType?,
+        mTypeMultiplicity: TypeMultiplicity,
+        mArrayDimension: Int,
+        mParameters: ArrayList<MethodParameter?>,
+        parameterCount: Int
+    ) {
+        name = mName
+        this.methodOrder = methodOrder
+        visibility = mVisibility
+        isStatic = mStatic
+        umlType = mUmlType
+        typeMultiplicity = mTypeMultiplicity
+        arrayDimension = mArrayDimension
+        parameters = mParameters
+        this.parameterCount = parameterCount
     }
 
-    public UmlClassMethod(int methodOrder) {
-        mMethodOrder = methodOrder;
-        mParameterCount=0;
-        mParameters=new ArrayList<>();
+    constructor(methodOrder: Int) {
+        this.methodOrder = methodOrder
+        parameterCount = 0
+        parameters = ArrayList()
     }
 
-//    **********************************************************************************************
-//    Getters and setters
-//    **********************************************************************************************
-
-    public String getName() {
-        return mName;
-    }
-
-    public void setName(String name) {
-        mName = name;
-    }
-
-    public Visibility getVisibility() {
-        return mVisibility;
-    }
-
-    public void setVisibility(Visibility visibility) {
-        mVisibility = visibility;
-    }
-
-    public boolean isStatic() {
-        return mStatic;
-    }
-
-    public void setStatic(boolean aStatic) {
-        mStatic = aStatic;
-    }
-
-    public UmlType getUmlType() {
-        return mUmlType;
-    }
-
-    public void setUmlType(UmlType umlType) {
-        mUmlType = umlType;
-    }
-
-    public TypeMultiplicity getTypeMultiplicity() {
-        return mTypeMultiplicity;
-    }
-
-    public void setTypeMultiplicity(TypeMultiplicity typeMultiplicity) {
-        mTypeMultiplicity = typeMultiplicity;
-    }
-
-    public int getArrayDimension() {
-        return mArrayDimension;
-    }
-
-    public void setArrayDimension(int arrayDimension) {
-        mArrayDimension = arrayDimension;
-    }
-
-    public ArrayList<MethodParameter> getParameters() {
-        return mParameters;
-    }
-
-    public int getMethodOrder() {
-        return mMethodOrder;
-    }
-
-    public void setMethodOrder(int methodOrder) {
-        mMethodOrder = methodOrder;
-    }
-
-    public int getParameterCount() {
-        return mParameterCount;
-    }
-
-    public void setParameterCount(int parameterCount) {
-        mParameterCount = parameterCount;
-    }
-
-    public String getMethodCompleteString() {
-        //return method name with conventional modifiers
-
-        String completeString=new String();
-
-        switch (mVisibility) {
-            case PUBLIC:
-                completeString="+";
-                break;
-            case PROTECTED:
-                completeString="~";
-                break;
-            default:
-                completeString="-";
-                break;
+    //return method name with conventional modifiers
+    val methodCompleteString: String
+        get() {
+            //return method name with conventional modifiers
+            var completeString = String()
+            completeString = when (visibility) {
+                Visibility.PUBLIC -> "+"
+                Visibility.PROTECTED -> "~"
+                else -> "-"
+            }
+            completeString = completeString + name + "("
+            for (p in parameters) {
+                completeString = completeString + p.getName()
+                if (parameters.indexOf(p) != parameters.size - 1) completeString =
+                    "$completeString, "
+            }
+            completeString = "$completeString) : "
+            completeString = when (typeMultiplicity) {
+                TypeMultiplicity.COLLECTION -> completeString + "<" + umlType.getName() + ">"
+                TypeMultiplicity.ARRAY -> completeString + "[" + umlType.getName() + "]^" + arrayDimension
+                else -> completeString + umlType.getName()
+            }
+            return completeString
         }
 
-        completeString=completeString+mName+"(";
+    fun findParameterByOrder(parameterOrder: Int): MethodParameter? {
+        for (p in parameters) if (p.getParameterOrder() == parameterOrder) return p
+        return null
+    }
 
-        for (MethodParameter p:mParameters) {
-            completeString = completeString + p.getName();
-            if (mParameters.indexOf(p)!=mParameters.size()-1)
-                completeString=completeString+", ";
+    fun getParameter(parameterName: String): MethodParameter? {
+        for (p in parameters) if (p.getName() == parameterName) return p
+        return null
+    }
+
+    //    **********************************************************************************************
+    //    Modifiers
+    //    **********************************************************************************************
+    fun addParameter(parameter: MethodParameter?) {
+        parameters.add(parameter)
+        parameterCount++
+    }
+
+    fun removeParameter(parameter: MethodParameter?) {
+        parameters.remove(parameter)
+    }
+
+    fun incrementParameterCount() {
+        parameterCount++
+    }
+
+    //    **********************************************************************************************
+    //    Test methods
+    //    **********************************************************************************************
+    fun containsParameterNamed(parameterName: String): Boolean {
+        for (p in parameters) if (p.getName() != null && p.getName() == parameterName) return true
+        return false
+    }
+
+    fun isEquivalentTo(method: UmlClassMethod?): Boolean {
+        if (methodOrder == method!!.methodOrder) return false
+        if (name != method.name) return false
+        if (umlType !== method.umlType) return false
+        if (parameters.size != method.parameters.size) return false
+        for (i in parameters.indices) {
+            if (!parameters[i]!!.isEquivalentTo(method.parameters[i])) return false
         }
-
-        completeString=completeString+") : ";
-
-        switch (mTypeMultiplicity) {
-            case COLLECTION:
-                completeString=completeString+"<"+mUmlType.getName()+">";
-                break;
-            case ARRAY:
-                completeString=completeString+"["+mUmlType.getName()+"]^"+mArrayDimension;
-                break;
-            default:
-                completeString=completeString+mUmlType.getName();
-        }
-
-        return completeString;
+        return true
     }
 
-    public static int indexOf(String methodName, ArrayList<UmlClassMethod> methods) {
-        for (UmlClassMethod m:methods)
-            if (methodName.equals(m.mName)) return methods.indexOf(m);
-
-        return -1;
-    }
-
-    public MethodParameter findParameterByOrder(int parameterOrder) {
-        for (MethodParameter p:mParameters)
-            if (p.getParameterOrder()==parameterOrder) return p;
-            return null;
-    }
-
-    public MethodParameter getParameter(String parameterName) {
-        for (MethodParameter p : mParameters)
-            if (p.getName().equals(parameterName))
-                return p;
-        return null;
-    }
-
-//    **********************************************************************************************
-//    Modifiers
-//    **********************************************************************************************
-
-    public void addParameter(MethodParameter parameter) {
-        mParameters.add(parameter);
-        mParameterCount++;
-    }
-
-    public void removeParameter(MethodParameter parameter) {
-        mParameters.remove(parameter);
-    }
-
-    public void incrementParameterCount() {
-        mParameterCount++;
-    }
-
-//    **********************************************************************************************
-//    Test methods
-//    **********************************************************************************************
-    public boolean containsParameterNamed(String parameterName) {
-        for (MethodParameter p:mParameters)
-            if (p.getName()!=null && p.getName().equals(parameterName))
-                return true;
-        return false;
-    }
-
-    public boolean isEquivalentTo(UmlClassMethod method) {
-        if (this.mMethodOrder==method.mMethodOrder)
-            return false;
-        if (!this.mName.equals(method.mName))
-            return false;
-        if (this.mUmlType!=method.mUmlType)
-            return false;
-        if (this.mParameters.size()!=method.mParameters.size())
-            return false;
-        for (int i = 0; i < this.mParameters.size(); i++) {
-            if (!this.mParameters.get(i).isEquivalentTo(method.mParameters.get(i)))
-                return false;
-        }
-        return true;
-    }
-
-//    **********************************************************************************************
-//    JSON methods
-//    **********************************************************************************************
-
-    public JSONObject toJSONObject() {
-        JSONObject jsonObject=new JSONObject();
-
-        try {
-            jsonObject.put(JSON_CLASS_METHOD_NAME, mName);
-            jsonObject.put(JSON_CLASS_METHOD_INDEX, mMethodOrder);
-            jsonObject.put(JSON_CLASS_METHOD_VISIBILITY, mVisibility);
-            jsonObject.put(JSON_CLASS_METHOD_STATIC, mStatic);
-            jsonObject.put(JSON_CLASS_METHOD_TYPE, mUmlType.getName());
-            jsonObject.put(JSON_CLASS_METHOD_TYPE_MULTIPLICITY, mTypeMultiplicity);
-            jsonObject.put(JSON_CLASS_METHOD_ARRAY_DIMENSION, mArrayDimension);
-            jsonObject.put(JSON_CLASS_METHOD_PARAMETERS, getParametersToJSONArray());
-            jsonObject.put(JSON_CLASS_METHOD_PARAMETER_COUNT,mParameterCount);
-            return jsonObject;
-        } catch (JSONException jsonException) {
-            return null;
+    //    **********************************************************************************************
+    //    JSON methods
+    //    **********************************************************************************************
+    fun toJSONObject(): JSONObject? {
+        val jsonObject = JSONObject()
+        return try {
+            jsonObject.put(JSON_CLASS_METHOD_NAME, name)
+            jsonObject.put(JSON_CLASS_METHOD_INDEX, methodOrder)
+            jsonObject.put(JSON_CLASS_METHOD_VISIBILITY, visibility)
+            jsonObject.put(JSON_CLASS_METHOD_STATIC, isStatic)
+            jsonObject.put(JSON_CLASS_METHOD_TYPE, umlType.getName())
+            jsonObject.put(JSON_CLASS_METHOD_TYPE_MULTIPLICITY, typeMultiplicity)
+            jsonObject.put(JSON_CLASS_METHOD_ARRAY_DIMENSION, arrayDimension)
+            jsonObject.put(JSON_CLASS_METHOD_PARAMETERS, parametersToJSONArray)
+            jsonObject.put(JSON_CLASS_METHOD_PARAMETER_COUNT, parameterCount)
+            jsonObject
+        } catch (jsonException: JSONException) {
+            null
         }
     }
 
-    public static UmlClassMethod fromJSONObject(JSONObject jsonObject) {
-        try {
-            if (UmlType.valueOf(jsonObject.getString(JSON_CLASS_METHOD_TYPE),UmlType.getUmlTypes())==null)
-                UmlType.createUmlType(jsonObject.getString(JSON_CLASS_METHOD_TYPE), UmlType.TypeLevel.CUSTOM);
+    private val parametersToJSONArray: JSONArray
+        private get() {
+            val jsonArray = JSONArray()
+            for (p in parameters) jsonArray.put(p!!.toJSONObject())
+            return jsonArray
+        }
 
-            return new UmlClassMethod(jsonObject.getString(JSON_CLASS_METHOD_NAME),
+    companion object {
+        const val JSON_CLASS_METHOD_NAME = "ClassMethodName"
+        const val JSON_CLASS_METHOD_VISIBILITY = "ClassMethodVisibility"
+        const val JSON_CLASS_METHOD_STATIC = "ClassMethodStatic"
+        const val JSON_CLASS_METHOD_TYPE = "ClassMethodType"
+        const val JSON_CLASS_METHOD_TYPE_MULTIPLICITY = "ClassMethodTypeMultiplicity"
+        const val JSON_CLASS_METHOD_ARRAY_DIMENSION = "ClassMethodArrayDimension"
+        const val JSON_CLASS_METHOD_PARAMETERS = "ClassMethodParameters"
+        const val JSON_CLASS_METHOD_PARAMETER_COUNT = "ClassMethodParameterCount"
+        const val JSON_CLASS_METHOD_INDEX = "ClassMethodIndex"
+        fun indexOf(methodName: String, methods: ArrayList<UmlClassMethod>): Int {
+            for (m in methods) if (methodName == m.name) return methods.indexOf(m)
+            return -1
+        }
+
+        fun fromJSONObject(jsonObject: JSONObject): UmlClassMethod? {
+            return try {
+                if (UmlType.Companion.valueOf(
+                        jsonObject.getString(JSON_CLASS_METHOD_TYPE),
+                        UmlType.Companion.getUmlTypes()
+                    ) == null
+                ) UmlType.Companion.createUmlType(
+                    jsonObject.getString(
+                        JSON_CLASS_METHOD_TYPE
+                    ), TypeLevel.CUSTOM
+                )
+                UmlClassMethod(
+                    jsonObject.getString(JSON_CLASS_METHOD_NAME),
                     jsonObject.getInt(JSON_CLASS_METHOD_INDEX),
                     Visibility.valueOf(jsonObject.getString(JSON_CLASS_METHOD_VISIBILITY)),
                     jsonObject.getBoolean(JSON_CLASS_METHOD_STATIC),
-                    UmlType.valueOf(jsonObject.getString(JSON_CLASS_METHOD_TYPE), UmlType.getUmlTypes()),
-                    TypeMultiplicity.valueOf(jsonObject.getString(JSON_CLASS_METHOD_TYPE_MULTIPLICITY)),
+                    UmlType.Companion.valueOf(
+                        jsonObject.getString(JSON_CLASS_METHOD_TYPE),
+                        UmlType.Companion.getUmlTypes()
+                    ),
+                    TypeMultiplicity.valueOf(
+                        jsonObject.getString(
+                            JSON_CLASS_METHOD_TYPE_MULTIPLICITY
+                        )
+                    ),
                     jsonObject.getInt(JSON_CLASS_METHOD_ARRAY_DIMENSION),
                     getParametersFromJSONArray(jsonObject.getJSONArray(JSON_CLASS_METHOD_PARAMETERS)),
-                    jsonObject.getInt(JSON_CLASS_METHOD_PARAMETER_COUNT));
-        } catch (JSONException jsonException) {
-            return null;
+                    jsonObject.getInt(JSON_CLASS_METHOD_PARAMETER_COUNT)
+                )
+            } catch (jsonException: JSONException) {
+                null
+            }
         }
-    }
 
-    private JSONArray getParametersToJSONArray() {
-        JSONArray jsonArray =new JSONArray();
-
-        for (MethodParameter p : this.mParameters) jsonArray.put(p.toJSONObject());
-        return jsonArray;
-    }
-
-    private static ArrayList<MethodParameter> getParametersFromJSONArray(JSONArray jsonArray) {
-        ArrayList<MethodParameter> methodParameters=new ArrayList<>();
-
-        JSONObject jsonParameter=(JSONObject)(jsonArray.remove(0));
-        while (jsonParameter != null) {
-            methodParameters.add(MethodParameter.fromJSONObject(jsonParameter));
-            jsonParameter=(JSONObject)(jsonArray.remove(0));
+        private fun getParametersFromJSONArray(jsonArray: JSONArray): ArrayList<MethodParameter?> {
+            val methodParameters = ArrayList<MethodParameter?>()
+            var jsonParameter = jsonArray.remove(0) as JSONObject
+            while (jsonParameter != null) {
+                methodParameters.add(MethodParameter.Companion.fromJSONObject(jsonParameter))
+                jsonParameter = jsonArray.remove(0) as JSONObject
+            }
+            return methodParameters
         }
-        return methodParameters;
     }
 }
