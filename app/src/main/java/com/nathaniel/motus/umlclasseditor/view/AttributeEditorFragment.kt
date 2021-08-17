@@ -5,9 +5,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.ArrayAdapter
+import android.widget.RadioGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.databinding.FragmentAttributeEditorBinding
 import com.nathaniel.motus.umlclasseditor.model.*
 import java.util.*
 
@@ -20,28 +23,15 @@ class AttributeEditorFragment  //    *******************************************
 //    Constructors
 //    **********************************************************************************************
     : EditorFragment(), View.OnClickListener, RadioGroup.OnCheckedChangeListener {
+
+    private var _binding: FragmentAttributeEditorBinding? = null
+    private val binding get() = _binding!!
+
     private var mAttributeOrder = 0
     private var mClassOrder = 0
     private var mUmlClassAttribute: UmlClassAttribute? = null
     private var mClassEditorFragmentTag: String? = null
     private var mUmlClass: UmlClass? = null
-    private var mEditAttributeText: TextView? = null
-    private var mDeleteAttributeButton: Button? = null
-    private var mAttributeNameEdit: EditText? = null
-    private var mPublicRadio: RadioButton? = null
-    private var mProtectedRadio: RadioButton? = null
-    private var mPrivateRadio: RadioButton? = null
-    private var mStaticCheck: CheckBox? = null
-    private var mFinalCheck: CheckBox? = null
-    private var mTypeSpinner: Spinner? = null
-    private var mMultiplicityRadioGroup: RadioGroup? = null
-    private var mSimpleRadio: RadioButton? = null
-    private var mCollectionRadio: RadioButton? = null
-    private var mArrayRadio: RadioButton? = null
-    private var mDimText: TextView? = null
-    private var mDimEdit: EditText? = null
-    private var mOKButton: Button? = null
-    private var mCancelButton: Button? = null
 
     //    **********************************************************************************************
     //    Fragment events
@@ -51,7 +41,9 @@ class AttributeEditorFragment  //    *******************************************
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_attribute_editor, container, false)
+        _binding = FragmentAttributeEditorBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
     }
 
     //    **********************************************************************************************
@@ -68,31 +60,14 @@ class AttributeEditorFragment  //    *******************************************
     }
 
     override fun configureViews() {
-        mEditAttributeText = activity!!.findViewById(R.id.edit_attribute_text)
-        mDeleteAttributeButton = activity!!.findViewById(R.id.delete_attribute_button)
-        mDeleteAttributeButton?.setTag(DELETE_ATTRIBUTE_BUTTON_TAG)
-        mDeleteAttributeButton?.setOnClickListener(this)
-        mAttributeNameEdit = activity!!.findViewById(R.id.attribute_name_input)
-        mMultiplicityRadioGroup = activity!!.findViewById(R.id.attribute_multiplicity_radio_group)
-        mMultiplicityRadioGroup?.setOnCheckedChangeListener(this)
-        mPublicRadio = activity!!.findViewById(R.id.attribute_public_radio)
-        mProtectedRadio = activity!!.findViewById(R.id.attribute_protected_radio)
-        mPrivateRadio = activity!!.findViewById(R.id.attribute_private_radio)
-        mStaticCheck = activity!!.findViewById(R.id.attribute_static_check)
-        mFinalCheck = activity!!.findViewById(R.id.attribute_final_check)
-        mTypeSpinner = activity!!.findViewById(R.id.attribute_type_spinner)
-        mTypeSpinner?.setTag(TYPE_SPINNER_TAG)
-        mSimpleRadio = activity!!.findViewById(R.id.attribute_simple_radio)
-        mCollectionRadio = activity!!.findViewById(R.id.attribute_collection_radio)
-        mArrayRadio = activity!!.findViewById(R.id.attribute_array_radio)
-        mDimText = activity!!.findViewById(R.id.attribute_dimension_text)
-        mDimEdit = activity!!.findViewById(R.id.attribute_dimension_input)
-        mOKButton = activity!!.findViewById(R.id.attribute_ok_button)
-        mOKButton?.setTag(OK_BUTTON_TAG)
-        mOKButton?.setOnClickListener(this)
-        mCancelButton = activity!!.findViewById(R.id.attribute_cancel_button)
-        mCancelButton?.setTag(CANCEL_BUTTON_TAG)
-        mCancelButton?.setOnClickListener(this)
+        binding.deleteAttributeButton.tag = DELETE_ATTRIBUTE_BUTTON_TAG
+        binding.deleteAttributeButton.setOnClickListener(this)
+        binding.attributeMultiplicityRadioGroup.setOnCheckedChangeListener(this)
+        binding.attributeTypeSpinner.tag = TYPE_SPINNER_TAG
+        binding.attributeOkButton.tag = OK_BUTTON_TAG
+        binding.attributeOkButton.setOnClickListener(this)
+        binding.attributeCancelButton.tag = CANCEL_BUTTON_TAG
+        binding.attributeCancelButton.setOnClickListener(this)
     }
 
     override fun initializeMembers() {
@@ -107,28 +82,28 @@ class AttributeEditorFragment  //    *******************************************
 
     override fun initializeFields() {
         if (mAttributeOrder != -1) {
-            mAttributeNameEdit?.setText(mUmlClassAttribute?.name)
+            binding.attributeNameInput.setText(mUmlClassAttribute?.name)
             when (mUmlClassAttribute?.visibility) {
-                Visibility.PUBLIC -> mPublicRadio!!.isChecked = true
-                Visibility.PROTECTED -> mProtectedRadio!!.isChecked = true
-                else -> mPrivateRadio!!.isChecked = true
+                Visibility.PUBLIC -> binding.attributePublicRadio.isChecked = true
+                Visibility.PROTECTED -> binding.attributeProtectedRadio.isChecked = true
+                else -> binding.attributePrivateRadio.isChecked = true
             }
-            mStaticCheck!!.isChecked = mUmlClassAttribute!!.isStatic
-            mFinalCheck!!.isChecked = mUmlClassAttribute!!.isFinal
+            binding.attributeStaticCheck.isChecked = mUmlClassAttribute!!.isStatic
+            binding.attributeFinalCheck.isChecked = mUmlClassAttribute!!.isFinal
             when (mUmlClassAttribute?.typeMultiplicity) {
-                TypeMultiplicity.SINGLE -> mSimpleRadio!!.isChecked = true
-                TypeMultiplicity.COLLECTION -> mCollectionRadio!!.isChecked = true
-                else -> mArrayRadio!!.isChecked = true
+                TypeMultiplicity.SINGLE -> binding.attributeSimpleRadio.isChecked = true
+                TypeMultiplicity.COLLECTION -> binding.attributeCollectionRadio.isChecked = true
+                else -> binding.attributeArrayRadio.isChecked = true
             }
-            mDimEdit!!.setText(Integer.toString(mUmlClassAttribute?.arrayDimension!!))
+            binding.attributeDimensionInput.setText(Integer.toString(mUmlClassAttribute?.arrayDimension!!))
             if (mUmlClassAttribute?.typeMultiplicity == TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
         } else {
-            mAttributeNameEdit!!.setText("")
-            mPublicRadio!!.isChecked = true
-            mStaticCheck!!.isChecked = false
-            mFinalCheck!!.isChecked = false
-            mSimpleRadio!!.isChecked = true
-            mDimEdit!!.setText("")
+            binding.attributeNameInput.setText("")
+            binding.attributePublicRadio.isChecked = true
+            binding.attributeStaticCheck.isChecked = false
+            binding.attributeFinalCheck.isChecked = false
+            binding.attributeSimpleRadio.isChecked = true
+            binding.attributeDimensionInput.setText("")
             setOnSingleDisplay()
         }
         populateTypeSpinner()
@@ -140,8 +115,8 @@ class AttributeEditorFragment  //    *******************************************
         Collections.sort(spinnerArray, TypeNameComparator())
         val adapter = ArrayAdapter(context!!, android.R.layout.simple_spinner_item, spinnerArray)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        mTypeSpinner!!.adapter = adapter
-        if (mAttributeOrder != -1) mTypeSpinner!!.setSelection(
+        binding.attributeTypeSpinner.adapter = adapter
+        if (mAttributeOrder != -1) binding.attributeTypeSpinner.setSelection(
             spinnerArray.indexOf(
                 mUmlClassAttribute?.umlType?.name
             )
@@ -149,23 +124,23 @@ class AttributeEditorFragment  //    *******************************************
     }
 
     private fun setOnEditDisplay() {
-        mDeleteAttributeButton!!.visibility = View.VISIBLE
-        mEditAttributeText!!.text = "Edit attribute"
+        binding.deleteAttributeButton.visibility = View.VISIBLE
+        binding.editAttributeText.text = "Edit attribute"
     }
 
     private fun setOnCreateDisplay() {
-        mDeleteAttributeButton!!.visibility = View.INVISIBLE
-        mEditAttributeText!!.text = "Create attribute"
+        binding.deleteAttributeButton.visibility = View.INVISIBLE
+        binding.editAttributeText.text = "Create attribute"
     }
 
     private fun setOnArrayDisplay() {
-        mDimText!!.visibility = View.VISIBLE
-        mDimEdit!!.visibility = View.VISIBLE
+        binding.attributeDimensionText.visibility = View.VISIBLE
+        binding.attributeDimensionInput.visibility = View.VISIBLE
     }
 
     private fun setOnSingleDisplay() {
-        mDimText!!.visibility = View.INVISIBLE
-        mDimEdit!!.visibility = View.INVISIBLE
+        binding.attributeDimensionText.visibility = View.INVISIBLE
+        binding.attributeDimensionInput.visibility = View.INVISIBLE
     }
 
     fun updateAttributeEditorFragment(attributeOrder: Int, classOrder: Int) {
@@ -233,28 +208,28 @@ class AttributeEditorFragment  //    *******************************************
     }
 
     private val attributeName: String
-        private get() = mAttributeNameEdit!!.text.toString()
+        private get() = binding.attributeNameInput.text.toString()
     private val visibility: Visibility
         private get() {
-            if (mPublicRadio!!.isChecked) return Visibility.PUBLIC
-            return if (mProtectedRadio!!.isChecked) Visibility.PROTECTED else Visibility.PRIVATE
+            if (binding.attributePublicRadio.isChecked) return Visibility.PUBLIC
+            return if (binding.attributeProtectedRadio.isChecked) Visibility.PROTECTED else Visibility.PRIVATE
         }
     private val isStatic: Boolean
-        private get() = mStaticCheck!!.isChecked
+        private get() = binding.attributeStaticCheck.isChecked
     private val isFinal: Boolean
-        private get() = mFinalCheck!!.isChecked
+        private get() = binding.attributeFinalCheck.isChecked
     private val type: UmlType?
         private get() = UmlType.Companion.valueOf(
-            mTypeSpinner!!.selectedItem.toString(),
+            binding.attributeTypeSpinner.selectedItem.toString(),
             UmlType.Companion.umlTypes
         )
     private val multiplicity: TypeMultiplicity
         private get() {
-            if (mSimpleRadio!!.isChecked) return TypeMultiplicity.SINGLE
-            return if (mCollectionRadio!!.isChecked) TypeMultiplicity.COLLECTION else TypeMultiplicity.ARRAY
+            if (binding.attributeSimpleRadio.isChecked) return TypeMultiplicity.SINGLE
+            return if (binding.attributeCollectionRadio.isChecked) TypeMultiplicity.COLLECTION else TypeMultiplicity.ARRAY
         }
     private val arrayDimension: Int
-        private get() = if (mDimEdit!!.text.toString() == "") 0 else mDimEdit!!.text.toString()
+        private get() = if (binding.attributeDimensionInput.text.toString() == "") 0 else binding.attributeDimensionInput.text.toString()
             .toInt()
 
     //    **********************************************************************************************
