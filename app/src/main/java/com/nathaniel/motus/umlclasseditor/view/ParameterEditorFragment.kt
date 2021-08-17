@@ -5,9 +5,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.ArrayAdapter
+import android.widget.RadioGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.databinding.FragmentParameterEditorBinding
 import com.nathaniel.motus.umlclasseditor.model.*
 import java.util.*
 
@@ -20,6 +23,10 @@ class ParameterEditorFragment  //    *******************************************
 //    Constructors
 //    **********************************************************************************************
     : EditorFragment(), View.OnClickListener, RadioGroup.OnCheckedChangeListener {
+
+    private var _binding: FragmentParameterEditorBinding? = null
+    private val binding get() = _binding!!
+    
     private var mParameterOrder = 0
     private var mMethodOrder = 0
     private var mClassOrder = 0
@@ -27,24 +34,20 @@ class ParameterEditorFragment  //    *******************************************
     private var mMethodParameter: MethodParameter? = null
     private var mUmlClassMethod: UmlClassMethod? = null
     private var mUmlClass: UmlClass? = null
-    private var mEditParameterText: TextView? = null
-    private var mDeleteParameterButton: Button? = null
-    private var mParameterNameEdit: EditText? = null
-    private var mParameterTypeSpinner: Spinner? = null
-    private var mParameterMultiplicityRadioGroup: RadioGroup? = null
-    private var mSingleRadio: RadioButton? = null
-    private var mCollectionRadio: RadioButton? = null
-    private var mArrayRadio: RadioButton? = null
-    private var mDimText: TextView? = null
-    private var mDimEdit: EditText? = null
-    private var mCancelButton: Button? = null
-    private var mOKButton: Button? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_parameter_editor, container, false)
+        _binding = FragmentParameterEditorBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     //    **********************************************************************************************
@@ -95,43 +98,30 @@ class ParameterEditorFragment  //    *******************************************
     }
 
     override fun configureViews() {
-        mEditParameterText = activity!!.findViewById(R.id.edit_parameter_text)
-        mDeleteParameterButton = activity!!.findViewById(R.id.delete_parameter_button)
-        mDeleteParameterButton?.setTag(DELETE_PARAMETER_BUTTON_TAG)
-        mDeleteParameterButton?.setOnClickListener(this)
-        mParameterNameEdit = activity!!.findViewById(R.id.parameter_name_input)
-        mParameterTypeSpinner = activity!!.findViewById(R.id.parameter_type_spinner)
-        mParameterMultiplicityRadioGroup =
-            activity!!.findViewById(R.id.parameter_multiplicity_radio_group)
-        mParameterMultiplicityRadioGroup?.setOnCheckedChangeListener(this)
-        mSingleRadio = activity!!.findViewById(R.id.parameter_simple_radio)
-        mCollectionRadio = activity!!.findViewById(R.id.parameter_collection_radio)
-        mArrayRadio = activity!!.findViewById(R.id.parameter_array_radio)
-        mDimText = activity!!.findViewById(R.id.parameter_dimension_text)
-        mDimEdit = activity!!.findViewById(R.id.parameter_dimension_input)
-        mCancelButton = activity!!.findViewById(R.id.parameter_cancel_button)
-        mCancelButton?.setTag(CANCEL_BUTTON_TAG)
-        mCancelButton?.setOnClickListener(this)
-        mOKButton = activity!!.findViewById(R.id.parameter_ok_button)
-        mOKButton?.setTag(OK_BUTTON_TAG)
-        mOKButton?.setOnClickListener(this)
+        binding.deleteParameterButton.tag = DELETE_PARAMETER_BUTTON_TAG
+        binding.deleteParameterButton.setOnClickListener(this)
+        binding.parameterMultiplicityRadioGroup.setOnCheckedChangeListener(this)
+        binding.parameterCancelButton.tag = CANCEL_BUTTON_TAG
+        binding.parameterCancelButton.setOnClickListener(this)
+        binding.parameterOkButton.tag = OK_BUTTON_TAG
+        binding.parameterOkButton.setOnClickListener(this)
     }
 
     override fun initializeFields() {
         if (mParameterOrder != -1) {
-            mParameterNameEdit?.setText(mMethodParameter?.name)
-            if (mMethodParameter?.typeMultiplicity == TypeMultiplicity.SINGLE) mSingleRadio!!.isChecked =
+            binding.parameterNameInput.setText(mMethodParameter?.name)
+            if (mMethodParameter?.typeMultiplicity == TypeMultiplicity.SINGLE) binding.parameterSimpleRadio.isChecked =
                 true
-            if (mMethodParameter?.typeMultiplicity == TypeMultiplicity.COLLECTION) mCollectionRadio!!.isChecked =
+            if (mMethodParameter?.typeMultiplicity == TypeMultiplicity.COLLECTION) binding.parameterCollectionRadio.isChecked =
                 true
-            if (mMethodParameter?.typeMultiplicity == TypeMultiplicity.ARRAY) mArrayRadio!!.isChecked =
+            if (mMethodParameter?.typeMultiplicity == TypeMultiplicity.ARRAY) binding.parameterArrayRadio.isChecked =
                 true
-            mDimEdit!!.setText(Integer.toString(mMethodParameter?.arrayDimension!!))
+            binding.parameterDimensionInput.setText(Integer.toString(mMethodParameter?.arrayDimension!!))
             if (mMethodParameter?.typeMultiplicity == TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
         } else {
-            mParameterNameEdit!!.setText("")
-            mSingleRadio!!.isChecked = true
-            mDimEdit!!.setText("")
+            binding.parameterNameInput.setText("")
+            binding.parameterSimpleRadio.isChecked = true
+            binding.parameterDimensionInput.setText("")
             setOnSingleDisplay()
         }
         populateTypeSpinner()
@@ -143,8 +133,8 @@ class ParameterEditorFragment  //    *******************************************
         Collections.sort(arrayList, TypeNameComparator())
         val adapter = ArrayAdapter(context!!, android.R.layout.simple_spinner_item, arrayList)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        mParameterTypeSpinner!!.adapter = adapter
-        if (mParameterOrder != -1) mParameterTypeSpinner!!.setSelection(
+        binding.parameterTypeSpinner.adapter = adapter
+        if (mParameterOrder != -1) binding.parameterTypeSpinner.setSelection(
             arrayList.indexOf(
                 mMethodParameter?.umlType?.name
             )
@@ -152,23 +142,23 @@ class ParameterEditorFragment  //    *******************************************
     }
 
     private fun setOnEditDisplay() {
-        mEditParameterText!!.text = "Edit parameter"
-        mDeleteParameterButton!!.visibility = View.VISIBLE
+        binding.editParameterText.text = "Edit parameter"
+        binding.deleteParameterButton.visibility = View.VISIBLE
     }
 
     private fun setOnCreateDisplay() {
-        mEditParameterText!!.text = "Create parameter"
-        mDeleteParameterButton!!.visibility = View.INVISIBLE
+        binding.editParameterText.text = "Create parameter"
+        binding.deleteParameterButton.visibility = View.INVISIBLE
     }
 
     private fun setOnSingleDisplay() {
-        mDimText!!.visibility = View.INVISIBLE
-        mDimEdit!!.visibility = View.INVISIBLE
+        binding.parameterDimensionText.visibility = View.INVISIBLE
+        binding.parameterDimensionInput.visibility = View.INVISIBLE
     }
 
     private fun setOnArrayDisplay() {
-        mDimText!!.visibility = View.VISIBLE
-        mDimEdit!!.visibility = View.VISIBLE
+        binding.parameterDimensionText.visibility = View.VISIBLE
+        binding.parameterDimensionInput.visibility = View.VISIBLE
     }
 
     fun updateParameterEditorFragment(parameterOrder: Int, methodOrder: Int, classOrder: Int) {
@@ -216,19 +206,19 @@ class ParameterEditorFragment  //    *******************************************
     }
 
     private val parameterName: String
-        private get() = mParameterNameEdit!!.text.toString()
+        private get() = binding.parameterNameInput.text.toString()
     private val parameterType: UmlType?
         private get() = UmlType.Companion.valueOf(
-            mParameterTypeSpinner!!.selectedItem.toString(),
+            binding.parameterTypeSpinner.selectedItem.toString(),
             UmlType.Companion.umlTypes
         )
     private val parameterMultiplicity: TypeMultiplicity
         private get() {
-            if (mSingleRadio!!.isChecked) return TypeMultiplicity.SINGLE
-            return if (mCollectionRadio!!.isChecked) TypeMultiplicity.COLLECTION else TypeMultiplicity.ARRAY
+            if (binding.parameterSimpleRadio.isChecked) return TypeMultiplicity.SINGLE
+            return if (binding.parameterCollectionRadio.isChecked) TypeMultiplicity.COLLECTION else TypeMultiplicity.ARRAY
         }
     private val arrayDimension: Int
-        private get() = if (mDimEdit!!.text.toString() == "") 0 else mDimEdit!!.text.toString()
+        private get() = if (binding.parameterDimensionInput.text.toString() == "") 0 else binding.parameterDimensionInput.text.toString()
             .toInt()
 
     //    **********************************************************************************************
