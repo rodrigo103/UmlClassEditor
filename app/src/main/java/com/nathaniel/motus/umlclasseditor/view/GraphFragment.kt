@@ -1,83 +1,23 @@
 package com.nathaniel.motus.umlclasseditor.view
 
-import android.view.View.OnTouchListener
-import com.nathaniel.motus.umlclasseditor.view.GraphFragment
-import com.nathaniel.motus.umlclasseditor.model.UmlProject
-import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
-import com.nathaniel.motus.umlclasseditor.model.UmlClass
-import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
-import android.graphics.Typeface
-import android.graphics.DashPathEffect
-import android.content.res.TypedArray
-import com.nathaniel.motus.umlclasseditor.R
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation
-import com.nathaniel.motus.umlclasseditor.view.GraphView
-import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
-import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
-import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
-import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
-import android.view.MotionEvent
-import android.content.DialogInterface
-import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
-import com.nathaniel.motus.umlclasseditor.view.EditorFragment
-import android.widget.AdapterView.OnItemLongClickListener
-import android.widget.ExpandableListView.OnChildClickListener
-import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
-import com.nathaniel.motus.umlclasseditor.model.AdapterItem
-import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
-import com.nathaniel.motus.umlclasseditor.model.AddItemString
-import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
-import com.nathaniel.motus.umlclasseditor.model.UmlType
-import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
-import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
-import com.nathaniel.motus.umlclasseditor.model.TypeMultiplicity
-import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator
-import com.nathaniel.motus.umlclasseditor.model.MethodParameter
-import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
-import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
-import org.json.JSONArray
-import org.json.JSONObject
-import org.json.JSONException
-import kotlin.jvm.JvmOverloads
-import android.content.pm.PackageManager
-import android.content.pm.PackageInfo
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.navigation.NavigationView
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.core.view.MenuCompat
-import androidx.annotation.RequiresApi
-import android.os.Build
-import android.content.SharedPreferences
-import android.content.SharedPreferences.Editor
-import com.nathaniel.motus.umlclasseditor.controller.MainActivity
-import androidx.core.view.GravityCompat
-import android.content.Intent
-import android.util.SparseBooleanArray
-import android.text.Html
-import android.app.Activity
 import android.view.View
-import android.widget.*
+import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
+import com.nathaniel.motus.umlclasseditor.databinding.FragmentGraphBinding
+import com.nathaniel.motus.umlclasseditor.model.UmlClass
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
 
 class GraphFragment  //    **********************************************************************************************
 //    Constructors
 //    **********************************************************************************************
     : Fragment(), View.OnClickListener {
-    private var mGraphView: GraphView? = null
-    private var mGraphText: TextView? = null
-    private var mInheritanceButton: ImageButton? = null
-    private var mRealizationButton: ImageButton? = null
-    private var mAggregationButton: ImageButton? = null
-    private var mEscapeButton: Button? = null
-    private var mAssociationButton: ImageButton? = null
-    private var mDependancyButton: ImageButton? = null
-    private var mCompositionButton: ImageButton? = null
-    private var mNewClassButton: Button? = null
+
+    private var _binding: FragmentGraphBinding? = null
+    private val binding get() = _binding!!
+
     var isExpectingTouchLocation = false
     var isExpectingStartClass = false
     var isExpectingEndClass = false
@@ -103,7 +43,14 @@ class GraphFragment  //    *****************************************************
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_graph, container, false)
+        _binding = FragmentGraphBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -116,34 +63,24 @@ class GraphFragment  //    *****************************************************
     //    Setup methods
     //    **********************************************************************************************
     private fun configureViews() {
-        mGraphView = activity!!.findViewById(R.id.graphview)
-        mGraphView?.setTag(GRAPHVIEW_TAG)
-        mGraphView?.setGraphFragment(this)
-        mGraphText = activity!!.findViewById(R.id.graph_text)
-        mInheritanceButton = activity!!.findViewById(R.id.inheritance_button)
-        mInheritanceButton?.setTag(INHERITANCE_BUTTON_TAG)
-        mInheritanceButton?.setOnClickListener(this)
-        mRealizationButton = activity!!.findViewById(R.id.realization_button)
-        mRealizationButton?.setTag(REALIZATION_BUTTON_TAG)
-        mRealizationButton?.setOnClickListener(this)
-        mAggregationButton = activity!!.findViewById(R.id.aggregation_button)
-        mAggregationButton?.setTag(AGGREGATION_BUTTON_TAG)
-        mAggregationButton?.setOnClickListener(this)
-        mEscapeButton = activity!!.findViewById(R.id.escape_button)
-        mEscapeButton?.setTag(ESCAPE_BUTTON_TAG)
-        mEscapeButton?.setOnClickListener(this)
-        mAssociationButton = activity!!.findViewById(R.id.association_button)
-        mAssociationButton?.setTag(ASSOCIATION_BUTTON_TAG)
-        mAssociationButton?.setOnClickListener(this)
-        mDependancyButton = activity!!.findViewById(R.id.dependency_button)
-        mDependancyButton?.setTag(DEPENDENCY_BUTTON_TAG)
-        mDependancyButton?.setOnClickListener(this)
-        mCompositionButton = activity!!.findViewById(R.id.composition_button)
-        mCompositionButton?.setTag(COMPOSITION_BUTTON_TAG)
-        mCompositionButton?.setOnClickListener(this)
-        mNewClassButton = activity!!.findViewById(R.id.new_class_button)
-        mNewClassButton?.setTag(NEW_CLASS_BUTTON_TAG)
-        mNewClassButton?.setOnClickListener(this)
+        binding.graphview.tag = GRAPHVIEW_TAG
+        binding.graphview.setGraphFragment(this)
+        binding.inheritanceButton.tag = INHERITANCE_BUTTON_TAG
+        binding.inheritanceButton.setOnClickListener(this)
+        binding.realizationButton.tag = REALIZATION_BUTTON_TAG
+        binding.realizationButton.setOnClickListener(this)
+        binding.aggregationButton.tag = AGGREGATION_BUTTON_TAG
+        binding.aggregationButton.setOnClickListener(this)
+        binding.escapeButton.tag = ESCAPE_BUTTON_TAG
+        binding.escapeButton.setOnClickListener(this)
+        binding.associationButton.tag = ASSOCIATION_BUTTON_TAG
+        binding.associationButton.setOnClickListener(this)
+        binding.dependencyButton.tag = DEPENDENCY_BUTTON_TAG
+        binding.dependencyButton.setOnClickListener(this)
+        binding.compositionButton.tag = COMPOSITION_BUTTON_TAG
+        binding.compositionButton.setOnClickListener(this)
+        binding.newClassButton.tag = NEW_CLASS_BUTTON_TAG
+        binding.newClassButton.setOnClickListener(this)
     }
 
     private fun createCallbackToParentActivity() {
@@ -154,11 +91,11 @@ class GraphFragment  //    *****************************************************
     //    Modifiers
     //    **********************************************************************************************
     fun setPrompt(prompt: String?) {
-        mGraphText!!.text = prompt
+        binding.graphText.text = prompt
     }
 
     fun clearPrompt() {
-        mGraphText!!.text = ""
+        binding.graphText.text = ""
     }
 
     //    **********************************************************************************************
