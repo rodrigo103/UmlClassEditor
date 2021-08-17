@@ -77,7 +77,7 @@ import android.app.Activity
 import android.widget.BaseExpandableListAdapter
 import java.util.Comparator
 
-class TypeNameComparator : Comparator<String> {
+open class TypeNameComparator : Comparator<String> {
     override fun compare(s: String, t1: String): Int {
         if (Character.isLowerCase(s[0]) && Character.isUpperCase(t1[0])) return -1
         return if (Character.isUpperCase(s[0]) && Character.isLowerCase(t1[0])) 1 else s.compareTo(

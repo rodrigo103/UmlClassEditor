@@ -108,8 +108,8 @@ class UmlRelation     //    ****************************************************
         val jsonObject = JSONObject()
         return try {
             jsonObject.put(JSON_RELATION_TYPE, umlRelationType.toString())
-            jsonObject.put(JSON_RELATION_ORIGIN_CLASS, relationOriginClass.getName())
-            jsonObject.put(JSON_RELATION_END_CLASS, relationEndClass.getName())
+            jsonObject.put(JSON_RELATION_ORIGIN_CLASS, relationOriginClass?.name)
+            jsonObject.put(JSON_RELATION_END_CLASS, relationEndClass?.name)
             jsonObject
         } catch (e: JSONException) {
             null

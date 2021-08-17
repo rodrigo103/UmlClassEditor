@@ -79,6 +79,6 @@ import java.util.Comparator
 
 class AdapterItemComparator : Comparator<AdapterItem> {
     override fun compare(adapterItem: AdapterItem, t1: AdapterItem): Int {
-        return adapterItem.name.compareTo(t1.name)
+        return adapterItem.name?.compareTo(t1.name!!)!!
     }
 }

@@ -154,7 +154,7 @@ class GraphView : View, OnTouchListener {
         dashPaint = Paint()
         dashPaint!!.color = Color.DKGRAY
         dashPaint!!.style = Paint.Style.STROKE
-        dashPaint!!.pathEffect = DashPathEffect(floatArrayOf(10f, 10f), 0)
+        dashPaint!!.pathEffect = DashPathEffect(floatArrayOf(10f, 10f), 0F)
         solidBlackPaint = Paint()
         solidBlackPaint!!.color = Color.DKGRAY
         solidBlackPaint!!.style = Paint.Style.FILL_AND_STROKE
@@ -192,9 +192,9 @@ class GraphView : View, OnTouchListener {
     //    **********************************************************************************************
     fun setUmlProject(umlProject: UmlProject?) {
         mUmlProject = umlProject
-        mZoom = mUmlProject.getZoom()
-        mXOffset = mUmlProject.getXOffset()
-        mYOffset = mUmlProject.getYOffset()
+        mZoom = mUmlProject?.zoom!!
+        mXOffset = mUmlProject?.xOffset!!
+        mYOffset = mUmlProject?.yOffset!!
         this.invalidate()
     }
 
@@ -220,8 +220,8 @@ class GraphView : View, OnTouchListener {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         updateProjectGeometricalParameters()
-        for (c in mUmlProject.getUmlClasses()) drawUmlClass(canvas, c)
-        for (r in mUmlProject.getUmlRelations()) drawRelation(canvas, r)
+        for (c in mUmlProject?.umlClasses!!) drawUmlClass(canvas, c)
+        for (r in mUmlProject?.umlRelations!!) drawRelation(canvas, r)
     }
 
     //    **********************************************************************************************
@@ -235,7 +235,7 @@ class GraphView : View, OnTouchListener {
         //Update class dimensions
         updateUmlClassNormalDimensions(umlClass)
         drawUmlClassHeader(canvas, umlClass)
-        if (umlClass.getUmlClassType() == UmlClassType.ENUM) drawValueBox(canvas, umlClass) else {
+        if (umlClass?.umlClassType == UmlClassType.ENUM) drawValueBox(canvas, umlClass) else {
             drawAttributeBox(canvas, umlClass)
             drawMethodBox(canvas, umlClass)
         }
@@ -243,53 +243,53 @@ class GraphView : View, OnTouchListener {
 
     private fun drawUmlClassHeader(canvas: Canvas, umlClass: UmlClass?) {
         canvas.drawRect(
-            visibleX(umlClass.getUmlClassNormalXPos()),
-            visibleY(umlClass.getUmlClassNormalYPos()),
-            visibleX(umlClass.getUmlClassNormalXPos() + umlClass.getUmlClassNormalWidth()),
-            visibleY(umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass)),
+            visibleX(umlClass!!.umlClassNormalXPos),
+            visibleY(umlClass.umlClassNormalYPos),
+            visibleX(umlClass.umlClassNormalXPos + umlClass.umlClassNormalWidth),
+            visibleY(umlClass.umlClassNormalYPos + getClassHeaderNormalHeight(umlClass)),
             linePaint!!
         )
-        when (umlClass.getUmlClassType()) {
+        when (umlClass.umlClassType) {
             UmlClassType.INTERFACE -> {
                 canvas.drawText(
                     "<< Interface >>",
                     visibleX(
-                        umlClass.getUmlClassNormalXPos() + (umlClass.getUmlClassNormalWidth() - getTextNormalWidth(
+                        umlClass.umlClassNormalXPos + (umlClass.umlClassNormalWidth - getTextNormalWidth(
                             "<< Interface >>"
                         )) / 2
                     ),
-                    visibleY(umlClass.getUmlClassNormalYPos() + FONT_SIZE + INTERLINE),
+                    visibleY(umlClass.umlClassNormalYPos + FONT_SIZE + INTERLINE),
                     plainTextPaint!!
                 )
                 canvas.drawText(
-                    umlClass.getName(),
+                    umlClass.name!!,
                     visibleX(
-                        umlClass.getUmlClassNormalXPos() + (umlClass.getUmlClassNormalWidth() - getTextNormalWidth(
-                            umlClass.getName()
+                        umlClass.umlClassNormalXPos + (umlClass.umlClassNormalWidth - getTextNormalWidth(
+                            umlClass.name
                         )) / 2
                     ),
-                    visibleY(umlClass.getUmlClassNormalYPos() + FONT_SIZE * 2 + INTERLINE * 2),
+                    visibleY(umlClass.umlClassNormalYPos + FONT_SIZE * 2 + INTERLINE * 2),
                     plainTextPaint!!
                 )
             }
             UmlClassType.ABSTRACT_CLASS -> canvas.drawText(
-                umlClass.getName(),
+                umlClass.name!!,
                 visibleX(
-                    umlClass.getUmlClassNormalXPos() + (umlClass.getUmlClassNormalWidth() - getTextNormalWidth(
-                        umlClass.getName()
+                    umlClass.umlClassNormalXPos + (umlClass.umlClassNormalWidth - getTextNormalWidth(
+                        umlClass.name
                     )) / 2
                 ),
-                visibleY(umlClass.getUmlClassNormalYPos() + FONT_SIZE + INTERLINE),
+                visibleY(umlClass.umlClassNormalYPos + FONT_SIZE + INTERLINE),
                 italicTextPaint!!
             )
             else -> canvas.drawText(
-                umlClass.getName(),
+                umlClass.name!!,
                 visibleX(
-                    umlClass.getUmlClassNormalXPos() + (umlClass.getUmlClassNormalWidth() - getTextNormalWidth(
-                        umlClass.getName()
+                    umlClass.umlClassNormalXPos + (umlClass.umlClassNormalWidth - getTextNormalWidth(
+                        umlClass.name
                     )) / 2
                 ),
-                visibleY(umlClass.getUmlClassNormalYPos() + FONT_SIZE + INTERLINE),
+                visibleY(umlClass.umlClassNormalYPos + FONT_SIZE + INTERLINE),
                 plainTextPaint!!
             )
         }
@@ -297,27 +297,27 @@ class GraphView : View, OnTouchListener {
 
     private fun drawAttributeBox(canvas: Canvas, umlClass: UmlClass?) {
         canvas.drawRect(
-            visibleX(umlClass.getUmlClassNormalXPos()),
-            visibleY(umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass)),
-            visibleX(umlClass.getUmlClassNormalXPos() + umlClass.getUmlClassNormalWidth()),
+            visibleX(umlClass?.umlClassNormalXPos!!),
+            visibleY(umlClass.umlClassNormalYPos + getClassHeaderNormalHeight(umlClass)),
+            visibleX(umlClass.umlClassNormalXPos + umlClass.umlClassNormalWidth),
             visibleY(
-                umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
+                umlClass.umlClassNormalYPos + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
                     umlClass
                 )
             ),
             linePaint!!
         )
         var currentY =
-            umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + INTERLINE + FONT_SIZE
-        for (a in umlClass.getAttributes()) {
+            umlClass.umlClassNormalYPos + getClassHeaderNormalHeight(umlClass) + INTERLINE + FONT_SIZE
+        for (a in umlClass.attributes) {
             if (a!!.isStatic) canvas.drawText(
                 a.attributeCompleteString,
-                visibleX(umlClass.getUmlClassNormalXPos() + INTERLINE),
+                visibleX(umlClass.umlClassNormalXPos + INTERLINE),
                 visibleY(currentY),
                 underlinedTextPaint!!
             ) else canvas.drawText(
                 a.attributeCompleteString,
-                visibleX(umlClass.getUmlClassNormalXPos() + INTERLINE),
+                visibleX(umlClass.umlClassNormalXPos + INTERLINE),
                 visibleY(currentY),
                 plainTextPaint!!
             )
@@ -327,33 +327,33 @@ class GraphView : View, OnTouchListener {
 
     private fun drawMethodBox(canvas: Canvas, umlClass: UmlClass?) {
         canvas.drawRect(
-            visibleX(umlClass.getUmlClassNormalXPos()),
+            visibleX(umlClass?.umlClassNormalXPos!!),
             visibleY(
-                umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
+                umlClass?.umlClassNormalYPos + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
                     umlClass
                 )
             ),
-            visibleX(umlClass.getUmlClassNormalXPos() + umlClass.getUmlClassNormalWidth()),
+            visibleX(umlClass.umlClassNormalXPos + umlClass.umlClassNormalWidth),
             visibleY(
-                umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
+                umlClass.umlClassNormalYPos + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
                     umlClass
                 ) + getMethodBoxNormalHeight(umlClass)
             ),
             linePaint!!
         )
         var currentY =
-            umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
+            umlClass.umlClassNormalYPos + getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
                 umlClass
             ) + INTERLINE + FONT_SIZE
-        for (m in umlClass.getMethods()) {
+        for (m in umlClass!!.methods) {
             if (m!!.isStatic) canvas.drawText(
                 m.methodCompleteString,
-                visibleX(umlClass.getUmlClassNormalXPos() + INTERLINE),
+                visibleX(umlClass.umlClassNormalXPos + INTERLINE),
                 visibleY(currentY),
                 underlinedTextPaint!!
             ) else canvas.drawText(
                 m.methodCompleteString,
-                visibleX(umlClass.getUmlClassNormalXPos() + INTERLINE),
+                visibleX(umlClass.umlClassNormalXPos + INTERLINE),
                 visibleY(currentY),
                 plainTextPaint!!
             )
@@ -363,22 +363,22 @@ class GraphView : View, OnTouchListener {
 
     private fun drawValueBox(canvas: Canvas, umlClass: UmlClass?) {
         canvas.drawRect(
-            visibleX(umlClass.getUmlClassNormalXPos()),
-            visibleY(umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass)),
-            visibleX(umlClass.getUmlClassNormalXPos() + umlClass.getUmlClassNormalWidth()),
+            visibleX(umlClass?.umlClassNormalXPos!!),
+            visibleY(umlClass.umlClassNormalYPos + getClassHeaderNormalHeight(umlClass)),
+            visibleX(umlClass.umlClassNormalXPos + umlClass.umlClassNormalWidth),
             visibleY(
-                umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + getValueBoxNormalHeight(
+                umlClass.umlClassNormalYPos + getClassHeaderNormalHeight(umlClass) + getValueBoxNormalHeight(
                     umlClass
                 )
             ),
             linePaint!!
         )
         var currentY =
-            umlClass.getUmlClassNormalYPos() + getClassHeaderNormalHeight(umlClass) + INTERLINE + FONT_SIZE
-        for (v in umlClass.getValues()) {
+            umlClass.umlClassNormalYPos + getClassHeaderNormalHeight(umlClass) + INTERLINE + FONT_SIZE
+        for (v in umlClass.values) {
             canvas.drawText(
-                v.name,
-                visibleX(umlClass.getUmlClassNormalXPos() + INTERLINE),
+                v!!.name!!,
+                visibleX(umlClass.umlClassNormalXPos + INTERLINE),
                 visibleY(currentY),
                 plainTextPaint!!
             )
@@ -387,87 +387,87 @@ class GraphView : View, OnTouchListener {
     }
 
     private fun drawRelation(canvas: Canvas, umlRelation: UmlRelation?) {
-        val originAbsoluteLeft = umlRelation.getRelationOriginClass().umlClassNormalXPos
-        val originAbsoluteRight = umlRelation.getRelationOriginClass().normalRightEnd
-        val originAbsoluteTop = umlRelation.getRelationOriginClass().umlClassNormalYPos
-        val originAbsoluteBottom = umlRelation.getRelationOriginClass().normalBottomEnd
-        val endAbsoluteLeft = umlRelation.getRelationEndClass().umlClassNormalXPos
-        val endAbsoluteRight = umlRelation.getRelationEndClass().normalRightEnd
-        val endAbsoluteTop = umlRelation.getRelationEndClass().umlClassNormalYPos
-        val endAbsoluteBottom = umlRelation.getRelationEndClass().normalBottomEnd
+        val originAbsoluteLeft = umlRelation!!.relationOriginClass!!.umlClassNormalXPos
+        val originAbsoluteRight = umlRelation.relationOriginClass!!.normalRightEnd
+        val originAbsoluteTop = umlRelation.relationOriginClass!!.umlClassNormalYPos
+        val originAbsoluteBottom = umlRelation.relationOriginClass!!.normalBottomEnd
+        val endAbsoluteLeft = umlRelation.relationEndClass!!.umlClassNormalXPos
+        val endAbsoluteRight = umlRelation.relationEndClass!!.normalRightEnd
+        val endAbsoluteTop = umlRelation.relationEndClass!!.umlClassNormalYPos
+        val endAbsoluteBottom = umlRelation.relationEndClass!!.normalBottomEnd
         var absoluteXOrigin = 0f
         var absoluteYOrigin = 0f
         var absoluteXEnd = 0f
         var absoluteYEnd = 0f
 
         //End in South quarter of Origin
-        if (umlRelation.getRelationEndClass().isSouthOf(umlRelation.getRelationOriginClass())) {
+        if (umlRelation?.relationEndClass?.isSouthOf(umlRelation.relationOriginClass)!!) {
             val lowerXLimit =
-                originAbsoluteLeft - endAbsoluteTop + originAbsoluteBottom - umlRelation.getRelationEndClass().umlClassNormalWidth
+                originAbsoluteLeft - endAbsoluteTop + originAbsoluteBottom - umlRelation.relationEndClass!!.umlClassNormalWidth
             val upperXLimit = originAbsoluteRight + endAbsoluteTop - originAbsoluteBottom
             absoluteXEnd = endAbsoluteRight -
-                    umlRelation.getRelationEndClass().umlClassNormalWidth / (upperXLimit - lowerXLimit) *
+                    umlRelation.relationEndClass?.umlClassNormalWidth!! / (upperXLimit - lowerXLimit) *
                     (endAbsoluteLeft - lowerXLimit)
             absoluteYEnd = endAbsoluteTop
             absoluteXOrigin = originAbsoluteLeft +
-                    umlRelation.getRelationOriginClass().umlClassNormalWidth / (upperXLimit - lowerXLimit) *
+                    umlRelation.relationOriginClass?.umlClassNormalWidth!! / (upperXLimit - lowerXLimit) *
                     (endAbsoluteLeft - lowerXLimit)
             absoluteYOrigin = originAbsoluteBottom
         }
 
         //End in North quarter or Origin
-        if (umlRelation.getRelationEndClass().isNorthOf(umlRelation.getRelationOriginClass())) {
+        if (umlRelation.relationEndClass?.isNorthOf(umlRelation.relationOriginClass)!!) {
             val lowerXLimit =
-                originAbsoluteLeft - originAbsoluteTop + endAbsoluteBottom - umlRelation.getRelationEndClass().umlClassNormalWidth
+                originAbsoluteLeft - originAbsoluteTop + endAbsoluteBottom - umlRelation.relationEndClass!!.umlClassNormalWidth
             val upperXLimit = originAbsoluteRight + originAbsoluteTop - endAbsoluteBottom
             absoluteXEnd = endAbsoluteRight -
-                    umlRelation.getRelationEndClass().umlClassNormalWidth / (upperXLimit - lowerXLimit) *
+                    umlRelation.relationEndClass?.umlClassNormalWidth!! / (upperXLimit - lowerXLimit) *
                     (endAbsoluteLeft - lowerXLimit)
             absoluteYEnd = endAbsoluteBottom
             absoluteXOrigin = originAbsoluteLeft +
-                    umlRelation.getRelationOriginClass().umlClassNormalWidth / (upperXLimit - lowerXLimit) *
+                    umlRelation.relationOriginClass?.umlClassNormalWidth!! / (upperXLimit - lowerXLimit) *
                     (endAbsoluteLeft - lowerXLimit)
             absoluteYOrigin = originAbsoluteTop
         }
 
         //End in West quarter of Origin
-        if (umlRelation.getRelationEndClass().isWestOf(umlRelation.getRelationOriginClass())) {
+        if (umlRelation?.relationEndClass!!.isWestOf(umlRelation.relationOriginClass)) {
             val lowerYLimit =
-                originAbsoluteTop - originAbsoluteLeft + endAbsoluteRight - umlRelation.getRelationEndClass().umlClassNormalHeight
+                originAbsoluteTop - originAbsoluteLeft + endAbsoluteRight - umlRelation?.relationEndClass!!.umlClassNormalHeight
             val upperYLimit = originAbsoluteBottom + originAbsoluteLeft - endAbsoluteRight
             absoluteXEnd = endAbsoluteRight
             absoluteYEnd = endAbsoluteBottom -
-                    umlRelation.getRelationEndClass().umlClassNormalHeight / (upperYLimit - lowerYLimit) *
+                    umlRelation?.relationEndClass!!.umlClassNormalHeight / (upperYLimit - lowerYLimit) *
                     (endAbsoluteTop - lowerYLimit)
             absoluteXOrigin = originAbsoluteLeft
             absoluteYOrigin = originAbsoluteTop +
-                    umlRelation.getRelationOriginClass().umlClassNormalHeight / (upperYLimit - lowerYLimit) *
+                    umlRelation?.relationOriginClass!!.umlClassNormalHeight / (upperYLimit - lowerYLimit) *
                     (endAbsoluteTop - lowerYLimit)
         }
 
         //End in East quarter of Origin
-        if (umlRelation.getRelationEndClass().isEastOf(umlRelation.getRelationOriginClass())) {
+        if (umlRelation?.relationEndClass!!.isEastOf(umlRelation?.relationOriginClass)) {
             val lowerYLimit =
-                originAbsoluteTop - endAbsoluteLeft + originAbsoluteRight - umlRelation.getRelationEndClass().umlClassNormalHeight
+                originAbsoluteTop - endAbsoluteLeft + originAbsoluteRight - umlRelation?.relationEndClass?.umlClassNormalHeight!!
             val upperYLimit = originAbsoluteBottom + endAbsoluteLeft - originAbsoluteRight
             absoluteXEnd = endAbsoluteLeft
             absoluteYEnd = endAbsoluteBottom -
-                    umlRelation.getRelationEndClass().umlClassNormalHeight / (upperYLimit - lowerYLimit) *
+                    umlRelation.relationEndClass!!.umlClassNormalHeight / (upperYLimit - lowerYLimit) *
                     (endAbsoluteTop - lowerYLimit)
             absoluteXOrigin = originAbsoluteRight
             absoluteYOrigin = originAbsoluteTop +
-                    umlRelation.getRelationOriginClass().umlClassNormalHeight / (upperYLimit - lowerYLimit) *
+                    umlRelation.relationOriginClass!!.umlClassNormalHeight / (upperYLimit - lowerYLimit) *
                     (endAbsoluteTop - lowerYLimit)
         }
         //update relation coordinates
-        umlRelation.setXOrigin(absoluteXOrigin)
-        umlRelation.setYOrigin(absoluteYOrigin)
-        umlRelation.setXEnd(absoluteXEnd)
-        umlRelation.setYEnd(absoluteYEnd)
+        umlRelation.xOrigin = (absoluteXOrigin)
+        umlRelation.yOrigin = (absoluteYOrigin)
+        umlRelation.xEnd = (absoluteXEnd)
+        umlRelation.yEnd = (absoluteYEnd)
         val path = Path()
         path.moveTo(visibleX(absoluteXOrigin), visibleY(absoluteYOrigin))
         path.lineTo(visibleX(absoluteXEnd), visibleY(absoluteYEnd))
-        when (umlRelation.getUmlRelationType()) {
+        when (umlRelation.umlRelationType) {
             UmlRelationType.INHERITANCE -> {
                 canvas.drawPath(path, linePaint!!)
                 drawSolidWhiteArrow(
@@ -632,8 +632,8 @@ class GraphView : View, OnTouchListener {
                     mXOffset = mXOffset + event.x - mLastTouchX
                     mYOffset = mYOffset + event.y - mLastTouchY
                 } else {
-                    mMovingClass.setUmlClassNormalXPos(mMovingClass.getUmlClassNormalXPos() + (event.x - mLastTouchX) / mZoom)
-                    mMovingClass.setUmlClassNormalYPos(mMovingClass.getUmlClassNormalYPos() + (event.y - mLastTouchY) / mZoom)
+                    mMovingClass!!.umlClassNormalXPos = (mMovingClass?.umlClassNormalXPos!! + (event.x - mLastTouchX) / mZoom)
+                    mMovingClass!!.umlClassNormalYPos = (mMovingClass?.umlClassNormalYPos!! + (event.y - mLastTouchY) / mZoom)
                 }
                 mLastTouchX = event.x
                 mLastTouchY = event.y
@@ -680,7 +680,7 @@ class GraphView : View, OnTouchListener {
 
                     //locate new class
                     if (mGraphFragment!!.isExpectingTouchLocation) {
-                        mGraphFragment.setExpectingTouchLocation(false)
+                        mGraphFragment!!.isExpectingTouchLocation = (false)
                         mGraphFragment!!.clearPrompt()
                         mCallback!!.createClass(absoluteX(mLastTouchX), absoluteY(mLastTouchY))
 
@@ -689,15 +689,15 @@ class GraphView : View, OnTouchListener {
                         && getTouchedClass(mLastTouchX, mLastTouchY) != null && getTouchedClass(
                             mLastTouchX,
                             mLastTouchY
-                        ) !== mGraphFragment.getStartClass()
+                        ) !== mGraphFragment!!.startClass
                     ) {
-                        mGraphFragment.setEndClass(getTouchedClass(mLastTouchX, mLastTouchY))
-                        mGraphFragment.setExpectingEndClass(false)
+                        mGraphFragment!!.endClass = (getTouchedClass(mLastTouchX, mLastTouchY))
+                        mGraphFragment!!.isExpectingEndClass = (false)
                         mGraphFragment!!.clearPrompt()
                         mCallback!!.createRelation(
-                            mGraphFragment.getStartClass(),
-                            mGraphFragment.getEndClass(),
-                            mGraphFragment.getUmlRelationType()
+                            mGraphFragment!!.startClass,
+                            mGraphFragment!!.endClass,
+                            mGraphFragment!!.umlRelationType
                         )
 
                         //touch relation origin class
@@ -706,9 +706,9 @@ class GraphView : View, OnTouchListener {
                             mLastTouchY
                         ) != null
                     ) {
-                        mGraphFragment.setStartClass(getTouchedClass(mLastTouchX, mLastTouchY))
-                        mGraphFragment.setExpectingStartClass(false)
-                        mGraphFragment.setExpectingEndClass(true)
+                        mGraphFragment!!.startClass = (getTouchedClass(mLastTouchX, mLastTouchY))
+                        mGraphFragment!!.isExpectingStartClass = (false)
+                        mGraphFragment!!.isExpectingEndClass = (true)
                         mGraphFragment!!.setPrompt("Choose end class")
                     }
                 }
@@ -746,15 +746,15 @@ class GraphView : View, OnTouchListener {
 //        plainTextPaint.setTextSize(FONT_SIZE*mZoom);
 //        umlClass.setUmlClassNormalWidth((getUmlClassMaxTextWidth(umlClass, plainTextPaint)+INTERLINE*2f*mZoom)/mZoom);
 //        umlClass.setUmlClassNormalHeight(INTERLINE*3f+(FONT_SIZE+INTERLINE)*(1f+umlClass.getAttributeList().size()+umlClass.getMethodList().size()));
-        when (umlClass.getUmlClassType()) {
+        when (umlClass!!.umlClassType) {
             UmlClassType.ENUM -> {
-                umlClass.setUmlClassNormalWidth(
+                umlClass.umlClassNormalWidth = (
                     Math.max(
                         getClassHeaderNormalWidth(umlClass),
                         getValueBoxNormalWidth(umlClass)
                     )
                 )
-                umlClass.setUmlClassNormalHeight(
+                umlClass.umlClassNormalHeight = (
                     getClassHeaderNormalHeight(umlClass) + getValueBoxNormalHeight(
                         umlClass
                     )
@@ -768,8 +768,8 @@ class GraphView : View, OnTouchListener {
                     getAttributeBoxNormalWidth(umlClass)
                 if (getMethodBoxNormalWidth(umlClass) > currentWidth) currentWidth =
                     getMethodBoxNormalWidth(umlClass)
-                umlClass.setUmlClassNormalWidth(currentWidth)
-                umlClass.setUmlClassNormalHeight(
+                umlClass.umlClassNormalWidth = (currentWidth)
+                umlClass.umlClassNormalHeight = (
                     getClassHeaderNormalHeight(umlClass) + getAttributeBoxNormalHeight(
                         umlClass
                     ) + getMethodBoxNormalHeight(umlClass)
@@ -780,17 +780,17 @@ class GraphView : View, OnTouchListener {
 
     private fun getClassHeaderNormalWidth(umlClass: UmlClass?): Float {
         //you may have to take into account <<interface>>
-        return when (umlClass.getUmlClassType()) {
+        return when (umlClass!!.umlClassType) {
             UmlClassType.INTERFACE -> Math.max(
                 getTextNormalWidth("<< Interface >>"),
-                getTextNormalWidth(umlClass.getName())
+                getTextNormalWidth(umlClass.name)
             ) + 2 * INTERLINE
-            else -> getTextNormalWidth(umlClass.getName()) + 2 * INTERLINE
+            else -> getTextNormalWidth(umlClass.name) + 2 * INTERLINE
         }
     }
 
     private fun getClassHeaderNormalHeight(umlClass: UmlClass?): Float {
-        return when (umlClass.getUmlClassType()) {
+        return when (umlClass!!.umlClassType) {
             UmlClassType.INTERFACE -> FONT_SIZE * 2 + 3 * INTERLINE
             else -> FONT_SIZE + 2 * INTERLINE
         }
@@ -798,35 +798,35 @@ class GraphView : View, OnTouchListener {
 
     private fun getAttributeBoxNormalWidth(umlClass: UmlClass?): Float {
         var currentWidth = 0f
-        for (a in umlClass.getAttributes()) if (getTextNormalWidth(a.attributeCompleteString) > currentWidth) currentWidth =
+        for (a in umlClass!!.attributes) if (getTextNormalWidth(a!!.attributeCompleteString) > currentWidth) currentWidth =
             getTextNormalWidth(a.attributeCompleteString)
         return currentWidth + 2 * INTERLINE
     }
 
     private fun getAttributeBoxNormalHeight(umlClass: UmlClass?): Float {
-        return umlClass.getAttributes().size * FONT_SIZE + (umlClass.getAttributes().size + 1) * INTERLINE
+        return umlClass!!.attributes.size * FONT_SIZE + (umlClass!!.attributes.size + 1) * INTERLINE
     }
 
     private fun getMethodBoxNormalWidth(umlClass: UmlClass?): Float {
         var currentWidth = 0f
-        for (m in umlClass.getMethods()) if (getTextNormalWidth(m.methodCompleteString) > currentWidth) currentWidth =
+        for (m in umlClass!!.methods) if (getTextNormalWidth(m!!.methodCompleteString) > currentWidth) currentWidth =
             getTextNormalWidth(m.methodCompleteString)
         return currentWidth + 2 * INTERLINE
     }
 
     private fun getMethodBoxNormalHeight(umlClass: UmlClass?): Float {
-        return umlClass.getMethods().size * FONT_SIZE + (umlClass.getMethods().size + 1) * INTERLINE
+        return umlClass!!.methods.size * FONT_SIZE + (umlClass.methods.size + 1) * INTERLINE
     }
 
     private fun getValueBoxNormalWidth(umlClass: UmlClass?): Float {
         var currentWidth = 0f
-        for (v in umlClass.getValues()) if (getTextNormalWidth(v.name) > currentWidth) currentWidth =
+        for (v in umlClass!!.values) if (getTextNormalWidth(v!!.name) > currentWidth) currentWidth =
             getTextNormalWidth(v.name)
         return currentWidth + 2 * INTERLINE
     }
 
     private fun getValueBoxNormalHeight(umlClass: UmlClass?): Float {
-        return umlClass.getValues().size * FONT_SIZE + (umlClass.getValues().size + 1) * INTERLINE
+        return umlClass!!.values.size * FONT_SIZE + (umlClass.values.size + 1) * INTERLINE
     }
 
     private fun getTextNormalWidth(text: String?): Float {
@@ -854,8 +854,8 @@ class GraphView : View, OnTouchListener {
             //return the length of the rectangle that can contain all the project
             var minX = 1000000f
             var maxX = -1000000f
-            for (c in mUmlProject.getUmlClasses()) {
-                minX = Math.min(c.umlClassNormalXPos, minX)
+            for (c in mUmlProject!!.umlClasses) {
+                minX = Math.min(c!!.umlClassNormalXPos, minX)
                 maxX = Math.max(c.normalRightEnd, maxX)
             }
             return maxX - minX
@@ -867,8 +867,8 @@ class GraphView : View, OnTouchListener {
             //return the height of the rectangle that can contain all the project
             var minY = 1000000f
             var maxY = -1000000f
-            for (c in mUmlProject.getUmlClasses()) {
-                minY = Math.min(c.umlClassNormalYPos, minY)
+            for (c in mUmlProject!!.umlClasses) {
+                minY = Math.min(c!!.umlClassNormalYPos, minY)
                 maxY = Math.max(c.normalBottomEnd, maxY)
             }
             return maxY - minY
@@ -876,25 +876,25 @@ class GraphView : View, OnTouchListener {
     private val absoluteProjectLeft: Float
         private get() {
             var minX = 1000000f
-            for (c in mUmlProject.getUmlClasses()) minX = Math.min(c.umlClassNormalXPos, minX)
+            for (c in mUmlProject!!.umlClasses) minX = Math.min(c!!.umlClassNormalXPos, minX)
             return minX
         }
     private val absoluteProjectRight: Float
         private get() {
             var maxX = -1000000f
-            for (c in mUmlProject.getUmlClasses()) maxX = Math.max(c.normalRightEnd, maxX)
+            for (c in mUmlProject!!.umlClasses) maxX = Math.max(c!!.normalRightEnd, maxX)
             return maxX
         }
     private val absoluteProjectTop: Float
         private get() {
             var minY = 1000000f
-            for (c in mUmlProject.getUmlClasses()) minY = Math.min(c.umlClassNormalYPos, minY)
+            for (c in mUmlProject!!.umlClasses) minY = Math.min(c!!.umlClassNormalYPos, minY)
             return minY
         }
     private val absoluteProjectBottom: Float
         private get() {
             var maxY = -1000000f
-            for (c in mUmlProject.getUmlClasses()) maxY = Math.max(c.normalBottomEnd, maxY)
+            for (c in mUmlProject!!.umlClasses) maxY = Math.max(c!!.normalBottomEnd, maxY)
             return maxY
         }
 
@@ -940,18 +940,18 @@ class GraphView : View, OnTouchListener {
     //    Other methods
     //    **********************************************************************************************
     private fun getTouchedClass(visibleX: Float, visibleY: Float): UmlClass? {
-        for (c in mUmlProject.getUmlClasses()) {
+        for (c in mUmlProject!!.umlClasses) {
             if (c!!.containsPoint(absoluteX(visibleX), absoluteY(visibleY))) return c
         }
         return null
     }
 
     fun getTouchedRelation(visibleX: Float, visibleY: Float): UmlRelation? {
-        for (r in mUmlProject.getUmlRelations()) {
+        for (r in mUmlProject!!.umlRelations) {
             if (distance(
                     absoluteX(visibleX),
                     absoluteY(visibleY),
-                    r.xOrigin,
+                    r!!.xOrigin,
                     r.yOrigin,
                     r.xEnd,
                     r.yEnd
@@ -999,9 +999,9 @@ class GraphView : View, OnTouchListener {
     }
 
     private fun updateProjectGeometricalParameters() {
-        mUmlProject.setZoom(mZoom)
-        mUmlProject.setXOffset(mXOffset)
-        mUmlProject.setYOffset(mYOffset)
+        mUmlProject!!.zoom = (mZoom)
+        mUmlProject!!.xOffset = (mXOffset)
+        mUmlProject!!.yOffset = (mYOffset)
     }
 
     //    **********************************************************************************************

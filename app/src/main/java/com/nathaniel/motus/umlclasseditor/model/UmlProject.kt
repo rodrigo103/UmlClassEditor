@@ -94,7 +94,7 @@ class UmlProject(//    *********************************************************
     var xOffset = 0f
     var yOffset = 0f
     fun getUmlClass(className: String?): UmlClass? {
-        for (c in umlClasses) if (c.getName() == className) return c
+        for (c in umlClasses) if (c?.name == className) return c
         return null
     }
 
@@ -103,7 +103,7 @@ class UmlProject(//    *********************************************************
     }
 
     fun findClassByOrder(classOrder: Int): UmlClass? {
-        for (c in umlClasses) if (c.getClassOrder() == classOrder) return c
+        for (c in umlClasses) if (c?.classOrder == classOrder) return c
         return null
     }
 
@@ -147,25 +147,25 @@ class UmlProject(//    *********************************************************
 
     fun removeAttributesOfType(umlType: UmlType?) {
         for (c in umlClasses) {
-            for (a in c.getAttributes()) {
-                if (a.umlType === umlType) c!!.removeAttribute(a)
+            for (a in c?.attributes!!) {
+                if (a?.umlType === umlType) c.removeAttribute(a)
             }
         }
     }
 
     fun removeMethodsOfType(umlType: UmlType?) {
         for (c in umlClasses) {
-            for (m in c.getMethods()) {
-                if (m.umlType === umlType) c!!.removeMethod(m)
+            for (m in c?.methods!!) {
+                if (m?.umlType === umlType) c.removeMethod(m)
             }
         }
     }
 
     fun removeParametersOfType(umlType: UmlType?) {
         for (c in umlClasses) {
-            for (m in c.getMethods()) {
-                for (p in m.parameters) {
-                    if (p.umlType === umlType) m!!.removeParameter(p)
+            for (m in c?.methods!!) {
+                for (p in m?.parameters!!) {
+                    if (p?.umlType === umlType) m.removeParameter(p)
                 }
             }
         }
@@ -182,21 +182,21 @@ class UmlProject(//    *********************************************************
         //check whether there already is a relation between two classes
         //this test is not oriented
         var test = false
-        for (r in umlRelations) if (r.getRelationOriginClass() === firstClass && r.getRelationEndClass() === secondClass
-            || r.getRelationOriginClass() === secondClass && r.getRelationEndClass() === firstClass
+        for (r in umlRelations) if (r?.relationOriginClass === firstClass && r?.relationEndClass === secondClass
+            || r?.relationOriginClass === secondClass && r?.relationEndClass === firstClass
         ) test = true
         return test
     }
 
     fun hasConflictNameWith(umlClass: UmlClass): Boolean {
         var test = false
-        for (c in umlClasses) if (c.getName().compareTo(umlClass.name) == 0) test = true
+        for (c in umlClasses) if (c?.name?.compareTo(umlClass.name!!) == 0) test = true
         return test
     }
 
     fun containsClassNamed(className: String): Boolean {
         //check whether a class with className already exists in this project
-        for (c in umlClasses) if (c.getName() != null && c.getName() == className) return true
+        for (c in umlClasses) if (c?.name != null && c.name == className) return true
         return false
     }
 
@@ -257,8 +257,8 @@ class UmlProject(//    *********************************************************
 
     fun mergeWith(project: UmlProject?) {
         for (c in project!!.umlClasses) {
-            while (UmlType.Companion.containsPrimitiveUmlTypeNamed(c.getName())) c.setName(c.getName() + "(1)")
-            while (UmlType.Companion.containsCustomUmlTypeNamed(c.getName())) c.setName(c.getName() + "(1)")
+            while (UmlType.Companion.containsPrimitiveUmlTypeNamed(c?.name)) c?.name = (c?.name + "(1)")
+            while (UmlType.Companion.containsCustomUmlTypeNamed(c?.name)) c?.name = (c?.name + "(1)")
             while (c!!.alreadyExists(this)) c.name = c.name + "(1)"
             addUmlClass(c)
         }
@@ -351,8 +351,8 @@ class UmlProject(//    *********************************************************
                     ), context
                 )
                 for (c in umlProject!!.umlClasses) {
-                    while (UmlType.Companion.containsPrimitiveUmlTypeNamed(c.getName())) c.setName(c.getName() + "(1)")
-                    while (UmlType.Companion.containsCustomUmlTypeNamed(c.getName())) c.setName(c.getName() + "(1)")
+                    while (UmlType.Companion.containsPrimitiveUmlTypeNamed(c?.name)) c?.name = (c?.name + "(1)")
+                    while (UmlType.Companion.containsCustomUmlTypeNamed(c?.name)) c?.name = (c?.name + "(1)")
                 }
             } catch (e: JSONException) {
                 e.printStackTrace()

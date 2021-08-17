@@ -1,70 +1,20 @@
 package com.nathaniel.motus.umlclasseditor.view
 
-import android.view.View.OnTouchListener
-import com.nathaniel.motus.umlclasseditor.view.GraphFragment
-import com.nathaniel.motus.umlclasseditor.model.UmlProject
-import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
-import com.nathaniel.motus.umlclasseditor.model.UmlClass
-import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
-import android.graphics.Typeface
-import android.graphics.DashPathEffect
-import android.content.res.TypedArray
-import com.nathaniel.motus.umlclasseditor.R
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation
-import com.nathaniel.motus.umlclasseditor.view.GraphView
-import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
-import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
-import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
-import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
-import android.view.MotionEvent
-import android.content.DialogInterface
-import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
-import com.nathaniel.motus.umlclasseditor.view.EditorFragment
-import android.widget.AdapterView.OnItemLongClickListener
-import android.widget.ExpandableListView.OnChildClickListener
-import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
-import com.nathaniel.motus.umlclasseditor.model.AdapterItem
-import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
-import com.nathaniel.motus.umlclasseditor.model.AddItemString
-import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
-import com.nathaniel.motus.umlclasseditor.model.UmlType
-import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
-import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
-import com.nathaniel.motus.umlclasseditor.model.TypeMultiplicity
-import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator
-import com.nathaniel.motus.umlclasseditor.model.MethodParameter
-import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
-import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
-import org.json.JSONArray
-import org.json.JSONObject
-import org.json.JSONException
-import kotlin.jvm.JvmOverloads
-import android.content.pm.PackageManager
-import android.content.pm.PackageInfo
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.navigation.NavigationView
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.core.view.MenuCompat
-import androidx.annotation.RequiresApi
-import android.os.Build
-import android.content.SharedPreferences
-import android.content.SharedPreferences.Editor
-import com.nathaniel.motus.umlclasseditor.controller.MainActivity
-import androidx.core.view.GravityCompat
-import android.content.Intent
-import android.util.SparseBooleanArray
-import android.text.Html
-import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
+import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
+import android.widget.AdapterView.OnItemLongClickListener
+import android.widget.ExpandableListView.OnChildClickListener
 import androidx.fragment.app.Fragment
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import com.nathaniel.motus.umlclasseditor.model.*
+import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
+import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
 import java.util.*
 
 class ClassEditorFragment  //    **********************************************************************************************
@@ -117,43 +67,43 @@ class ClassEditorFragment  //    ***********************************************
         mEditClassText = activity!!.findViewById(R.id.edit_class_text)
         mClassNameEdit = activity!!.findViewById(R.id.class_name_input)
         mDeleteClassButton = activity!!.findViewById(R.id.delete_class_button)
-        mDeleteClassButton.setTag(DELETE_CLASS_BUTTON_TAG)
-        mDeleteClassButton.setOnClickListener(this)
+        mDeleteClassButton?.setTag(DELETE_CLASS_BUTTON_TAG)
+        mDeleteClassButton?.setOnClickListener(this)
         mClassTypeRadioGroup = activity!!.findViewById(R.id.class_type_radio_group)
-        mClassTypeRadioGroup.setOnCheckedChangeListener(this)
+        mClassTypeRadioGroup?.setOnCheckedChangeListener(this)
         mJavaRadio = activity!!.findViewById(R.id.class_java_radio)
         mAbstractRadio = activity!!.findViewById(R.id.class_abstract_radio)
         mInterfaceRadio = activity!!.findViewById(R.id.class_interface_radio)
         mEnumRadio = activity!!.findViewById(R.id.class_enum_radio)
         mMemberListView = activity!!.findViewById(R.id.class_members_list)
-        mMemberListView.setTag(MEMBER_LIST_TAG)
-        mMemberListView.setOnChildClickListener(this)
-        mMemberListView.setOnItemLongClickListener(this)
+        mMemberListView?.setTag(MEMBER_LIST_TAG)
+        mMemberListView?.setOnChildClickListener(this)
+        mMemberListView?.setOnItemLongClickListener(this)
         mOKButton = activity!!.findViewById(R.id.class_ok_button)
-        mOKButton.setTag(OK_BUTTON_TAG)
-        mOKButton.setOnClickListener(this)
+        mOKButton?.setTag(OK_BUTTON_TAG)
+        mOKButton?.setOnClickListener(this)
         mCancelButton = activity!!.findViewById(R.id.class_cancel_button)
-        mCancelButton.setTag(CANCEL_BUTTON_TAG)
-        mCancelButton.setOnClickListener(this)
+        mCancelButton?.setTag(CANCEL_BUTTON_TAG)
+        mCancelButton?.setOnClickListener(this)
         mOKCancelLinearLayout = activity!!.findViewById(R.id.class_ok_cancel_linear)
     }
 
     override fun initializeMembers() {
         if (mClassOrder != -1) {
-            mUmlClass = mCallback.project.findClassByOrder(mClassOrder)
+            mUmlClass = mCallback?.project?.findClassByOrder(mClassOrder)
         } else {
             //class without type
-            mUmlClass = UmlClass(mCallback.project.umlClassCount)
-            mCallback.project.addUmlClass(mUmlClass)
+            mUmlClass = UmlClass(mCallback?.project?.umlClassCount!!)
+            mCallback?.project?.addUmlClass(mUmlClass)
         }
-        if (mClassOrder != -1 && mUmlClass.getUmlClassType() == UmlClassType.ENUM) sIsJavaClass =
+        if (mClassOrder != -1 && mUmlClass!!.umlClassType == UmlClassType.ENUM) sIsJavaClass =
             false else sIsJavaClass = true
     }
 
     override fun initializeFields() {
         if (mClassOrder != -1) {
-            mClassNameEdit.setText(mUmlClass.getName())
-            when (mUmlClass.getUmlClassType()) {
+            mClassNameEdit?.setText(mUmlClass?.name)
+            when (mUmlClass?.umlClassType) {
                 UmlClassType.JAVA_CLASS -> mJavaRadio!!.isChecked = true
                 UmlClassType.ABSTRACT_CLASS -> mAbstractRadio!!.isChecked = true
                 UmlClassType.INTERFACE -> mInterfaceRadio!!.isChecked = true
@@ -173,34 +123,39 @@ class ClassEditorFragment  //    ***********************************************
             if (mMemberListView!!.isGroupExpanded(0)) attributeGroupIsExpanded = true
             if (mMemberListView!!.isGroupExpanded(1)) methodGroupIsExpanded = true
         }
-        val attributeList: MutableList<AdapterItem?> = ArrayList()
-        for (a in mUmlClass.getAttributes()) attributeList.add(a)
+        val attributeList = mutableListOf<AdapterItem>()
+        for (a in mUmlClass?.attributes!!) attributeList.add(a!!)
         Collections.sort(attributeList, AdapterItemComparator())
         attributeList.add(0, AddItemString(getString(R.string.new_attribute_string)))
-        val methodList: MutableList<AdapterItem?> = ArrayList()
-        for (m in mUmlClass.getMethods()) methodList.add(m)
+
+        val methodList = mutableListOf<AdapterItem>()
+        for (m in mUmlClass?.methods!!) methodList.add(m!!)
         Collections.sort(methodList, AdapterItemComparator())
         methodList.add(0, AddItemString(getString(R.string.new_method_string)))
-        val title: List<String> = ArrayList()
+
+        val title = mutableListOf<String>()
         title.add(0, getString(R.string.attributes_string))
         title.add(1, getString(R.string.methods_string))
-        val hashMap = HashMap<String, List<AdapterItem?>>()
+
+        val hashMap = HashMap<String, List<AdapterItem>>()
         hashMap[getString(R.string.attributes_string)] = attributeList
         hashMap[getString(R.string.methods_string)] = methodList
+
         val adapter = CustomExpandableListViewAdapter(context, title, hashMap)
         mMemberListView!!.setAdapter(adapter)
+
         if (attributeGroupIsExpanded) mMemberListView!!.expandGroup(0)
         if (methodGroupIsExpanded) mMemberListView!!.expandGroup(1)
     }
 
     private fun populateMemberListViewForEnum() {
-        val valueList: MutableList<AdapterItem?> = ArrayList()
-        valueList.addAll(mUmlClass.getValues())
+        val valueList = mutableListOf<AdapterItem>()
+        valueList.addAll(mUmlClass?.values!!)
         Collections.sort(valueList, AdapterItemComparator())
         valueList.add(0, AddItemString(getString(R.string.new_value_string)))
         val title: MutableList<String> = ArrayList()
         title.add(getString(R.string.values_string))
-        val hashMap = HashMap<String, List<AdapterItem?>>()
+        val hashMap = HashMap<String, List<AdapterItem>>()
         hashMap[getString(R.string.values_string)] = valueList
         val adapter = CustomExpandableListViewAdapter(context, title, hashMap)
         mMemberListView!!.setAdapter(adapter)
@@ -227,7 +182,7 @@ class ClassEditorFragment  //    ***********************************************
         initializeMembers()
         initializeFields()
         if (mClassOrder == -1) setOnCreateDisplay() else setOnEditDisplay()
-        if (mClassOrder != -1 && mUmlClass.getUmlClassType() == UmlClassType.ENUM) sIsJavaClass =
+        if (mClassOrder != -1 && mUmlClass?.umlClassType == UmlClassType.ENUM) sIsJavaClass =
             false else sIsJavaClass = true
         setOnBackPressedCallback()
     }
@@ -291,17 +246,17 @@ class ClassEditorFragment  //    ***********************************************
         val item = expandableListView.expandableListAdapter.getChild(i, i1) as AdapterItem
         if (item.name == getString(R.string.new_attribute_string) && i1 == 0) mCallback!!.openAttributeEditorFragment(
             -1,
-            mUmlClass.getClassOrder()
+            mUmlClass?.classOrder!!
         ) else if (item.name == getString(R.string.new_method_string) && i1 == 0) mCallback!!.openMethodEditorFragment(
             -1,
-            mUmlClass.getClassOrder()
+            mUmlClass?.classOrder!!
         ) else if (item.name == getString(R.string.new_value_string) && i1 == 0) startNewValueDialog() else {
             if (title == getString(R.string.attributes_string)) mCallback!!.openAttributeEditorFragment(
                 (item as UmlClassAttribute).attributeOrder,
-                mUmlClass.getClassOrder()
+                mUmlClass?.classOrder!!
             ) else if (title == getString(R.string.methods_string)) mCallback!!.openMethodEditorFragment(
                 (item as UmlClassMethod).methodOrder,
-                mUmlClass.getClassOrder()
+                mUmlClass?.classOrder!!
             ) else if (title == getString(R.string.values_string)) startRenameValueDialog((item as UmlEnumValue).valueOrder)
         }
         return true
@@ -311,7 +266,7 @@ class ClassEditorFragment  //    ***********************************************
     //    Edition methods
     //    **********************************************************************************************
     override fun clearDraftObject() {
-        if (mClassOrder == -1) mCallback.project.removeUmlClass(mUmlClass)
+        if (mClassOrder == -1) mCallback?.project?.removeUmlClass(mUmlClass)
     }
 
     override fun createOrUpdateObject(): Boolean {
@@ -322,15 +277,15 @@ class ClassEditorFragment  //    ***********************************************
         return if (className == "") {
             Toast.makeText(context, "Name cannot be blank", Toast.LENGTH_SHORT).show()
             false
-        } else if (mCallback.project.containsClassNamed(className)
-            && mCallback.project.getUmlClass(className).classOrder != mClassOrder
+        } else if (mCallback?.project?.containsClassNamed(className)!!
+            && mCallback?.project?.getUmlClass(className)?.classOrder != mClassOrder
         ) {
             Toast.makeText(context, "This name already exists in project", Toast.LENGTH_SHORT)
                 .show()
             false
         } else if (UmlType.Companion.containsUmlTypeNamed(className) && UmlType.Companion.valueOf(
-                className, UmlType.Companion.getUmlTypes()
-            ).getTypeLevel() != TypeLevel.PROJECT
+                className, UmlType.Companion.umlTypes
+            )?.typeLevel != TypeLevel.PROJECT
         ) {
             Toast.makeText(
                 context,
@@ -339,11 +294,11 @@ class ClassEditorFragment  //    ***********************************************
             ).show()
             false
         } else {
-            mUmlClass.setName(className)
-            mUmlClass.setUmlClassType(classType)
+            mUmlClass?.name = (className)
+            mUmlClass?.umlClassType = (classType)
             if (mClassOrder == -1) {
-                mUmlClass.setUmlClassNormalXPos(mXPos)
-                mUmlClass.setUmlClassNormalYPos(mYPos)
+                mUmlClass?.umlClassNormalXPos = (mXPos)
+                mUmlClass?.umlClassNormalYPos = (mYPos)
                 //"finish" to declare type
                 mUmlClass!!.upgradeToProjectUmlType()
             }
@@ -371,7 +326,7 @@ class ClassEditorFragment  //    ***********************************************
         adb.setView(input)
             .setNegativeButton("CANCEL") { dialog, which -> }
             .setPositiveButton("OK") { dialog, which ->
-                mUmlClass!!.addValue(UmlEnumValue(input.text.toString(), mUmlClass.getValueCount()))
+                mUmlClass!!.addValue(UmlEnumValue(input.text.toString(), mUmlClass?.valueCount!!))
                 updateLists()
             }
         val inputDialog: Dialog = adb.create()
@@ -385,7 +340,7 @@ class ClassEditorFragment  //    ***********************************************
             .setMessage("Are you sure you want to delete this class ?")
         builder.setNegativeButton("NO") { dialog, which -> }
         builder.setPositiveButton("YES") { dialog, which ->
-            mCallback.project.removeUmlClass(mUmlClass)
+            mCallback!!.project!!.removeUmlClass(mUmlClass)
             mCallback!!.closeClassEditorFragment(fragment)
         }
         val dialog = builder.create()

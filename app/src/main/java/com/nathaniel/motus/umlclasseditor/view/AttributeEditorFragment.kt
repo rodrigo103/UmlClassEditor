@@ -1,56 +1,13 @@
 package com.nathaniel.motus.umlclasseditor.view
 
-import android.view.View.OnTouchListener
-import com.nathaniel.motus.umlclasseditor.view.GraphFragment
-import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
-import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
-import android.graphics.Typeface
-import android.graphics.DashPathEffect
-import android.content.res.TypedArray
-import com.nathaniel.motus.umlclasseditor.R
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
-import com.nathaniel.motus.umlclasseditor.view.GraphView
-import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
-import android.view.MotionEvent
-import android.content.DialogInterface
-import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
-import com.nathaniel.motus.umlclasseditor.view.EditorFragment
-import android.widget.AdapterView.OnItemLongClickListener
-import android.widget.ExpandableListView.OnChildClickListener
-import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
-import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
-import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
-import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
-import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
-import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
-import org.json.JSONArray
-import org.json.JSONObject
-import org.json.JSONException
-import kotlin.jvm.JvmOverloads
-import android.content.pm.PackageManager
-import android.content.pm.PackageInfo
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.navigation.NavigationView
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.core.view.MenuCompat
-import androidx.annotation.RequiresApi
-import android.os.Build
-import android.content.SharedPreferences
-import android.content.SharedPreferences.Editor
-import com.nathaniel.motus.umlclasseditor.controller.MainActivity
-import androidx.core.view.GravityCompat
-import android.content.Intent
-import android.util.SparseBooleanArray
-import android.text.Html
-import android.app.Activity
-import android.app.AlertDialog
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
+import com.nathaniel.motus.umlclasseditor.R
 import com.nathaniel.motus.umlclasseditor.model.*
 import java.util.*
 
@@ -113,58 +70,58 @@ class AttributeEditorFragment  //    *******************************************
     override fun configureViews() {
         mEditAttributeText = activity!!.findViewById(R.id.edit_attribute_text)
         mDeleteAttributeButton = activity!!.findViewById(R.id.delete_attribute_button)
-        mDeleteAttributeButton.setTag(DELETE_ATTRIBUTE_BUTTON_TAG)
-        mDeleteAttributeButton.setOnClickListener(this)
+        mDeleteAttributeButton?.setTag(DELETE_ATTRIBUTE_BUTTON_TAG)
+        mDeleteAttributeButton?.setOnClickListener(this)
         mAttributeNameEdit = activity!!.findViewById(R.id.attribute_name_input)
         mMultiplicityRadioGroup = activity!!.findViewById(R.id.attribute_multiplicity_radio_group)
-        mMultiplicityRadioGroup.setOnCheckedChangeListener(this)
+        mMultiplicityRadioGroup?.setOnCheckedChangeListener(this)
         mPublicRadio = activity!!.findViewById(R.id.attribute_public_radio)
         mProtectedRadio = activity!!.findViewById(R.id.attribute_protected_radio)
         mPrivateRadio = activity!!.findViewById(R.id.attribute_private_radio)
         mStaticCheck = activity!!.findViewById(R.id.attribute_static_check)
         mFinalCheck = activity!!.findViewById(R.id.attribute_final_check)
         mTypeSpinner = activity!!.findViewById(R.id.attribute_type_spinner)
-        mTypeSpinner.setTag(TYPE_SPINNER_TAG)
+        mTypeSpinner?.setTag(TYPE_SPINNER_TAG)
         mSimpleRadio = activity!!.findViewById(R.id.attribute_simple_radio)
         mCollectionRadio = activity!!.findViewById(R.id.attribute_collection_radio)
         mArrayRadio = activity!!.findViewById(R.id.attribute_array_radio)
         mDimText = activity!!.findViewById(R.id.attribute_dimension_text)
         mDimEdit = activity!!.findViewById(R.id.attribute_dimension_input)
         mOKButton = activity!!.findViewById(R.id.attribute_ok_button)
-        mOKButton.setTag(OK_BUTTON_TAG)
-        mOKButton.setOnClickListener(this)
+        mOKButton?.setTag(OK_BUTTON_TAG)
+        mOKButton?.setOnClickListener(this)
         mCancelButton = activity!!.findViewById(R.id.attribute_cancel_button)
-        mCancelButton.setTag(CANCEL_BUTTON_TAG)
-        mCancelButton.setOnClickListener(this)
+        mCancelButton?.setTag(CANCEL_BUTTON_TAG)
+        mCancelButton?.setOnClickListener(this)
     }
 
     override fun initializeMembers() {
-        mUmlClass = mCallback.project.findClassByOrder(mClassOrder)
+        mUmlClass = mCallback?.project?.findClassByOrder(mClassOrder)
         if (mAttributeOrder != -1) {
             mUmlClassAttribute = mUmlClass!!.findAttributeByOrder(mAttributeOrder)
         } else {
-            mUmlClassAttribute = UmlClassAttribute(mUmlClass.getUmlClassAttributeCount())
+            mUmlClassAttribute = UmlClassAttribute(mUmlClass?.umlClassAttributeCount!!)
             mUmlClass!!.addAttribute(mUmlClassAttribute)
         }
     }
 
     override fun initializeFields() {
         if (mAttributeOrder != -1) {
-            mAttributeNameEdit.setText(mUmlClassAttribute.getName())
-            when (mUmlClassAttribute.getVisibility()) {
+            mAttributeNameEdit?.setText(mUmlClassAttribute?.name)
+            when (mUmlClassAttribute?.visibility) {
                 Visibility.PUBLIC -> mPublicRadio!!.isChecked = true
                 Visibility.PROTECTED -> mProtectedRadio!!.isChecked = true
                 else -> mPrivateRadio!!.isChecked = true
             }
             mStaticCheck!!.isChecked = mUmlClassAttribute!!.isStatic
             mFinalCheck!!.isChecked = mUmlClassAttribute!!.isFinal
-            when (mUmlClassAttribute.getTypeMultiplicity()) {
+            when (mUmlClassAttribute?.typeMultiplicity) {
                 TypeMultiplicity.SINGLE -> mSimpleRadio!!.isChecked = true
                 TypeMultiplicity.COLLECTION -> mCollectionRadio!!.isChecked = true
                 else -> mArrayRadio!!.isChecked = true
             }
-            mDimEdit!!.setText(Integer.toString(mUmlClassAttribute.getArrayDimension()))
-            if (mUmlClassAttribute.getTypeMultiplicity() === TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
+            mDimEdit!!.setText(Integer.toString(mUmlClassAttribute?.arrayDimension!!))
+            if (mUmlClassAttribute?.typeMultiplicity == TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
         } else {
             mAttributeNameEdit!!.setText("")
             mPublicRadio!!.isChecked = true
@@ -178,15 +135,15 @@ class AttributeEditorFragment  //    *******************************************
     }
 
     private fun populateTypeSpinner() {
-        val spinnerArray: MutableList<String?> = ArrayList()
-        for (t in UmlType.Companion.getUmlTypes()) if (t.getName() != "void") spinnerArray.add(t.getName())
+        val spinnerArray = mutableListOf<String>()
+        for (t in UmlType.Companion?.umlTypes) if (t?.name != "void") spinnerArray.add(t?.name!!)
         Collections.sort(spinnerArray, TypeNameComparator())
         val adapter = ArrayAdapter(context!!, android.R.layout.simple_spinner_item, spinnerArray)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         mTypeSpinner!!.adapter = adapter
         if (mAttributeOrder != -1) mTypeSpinner!!.setSelection(
             spinnerArray.indexOf(
-                mUmlClassAttribute.getUmlType().name
+                mUmlClassAttribute?.umlType?.name
             )
         )
     }
@@ -217,7 +174,7 @@ class AttributeEditorFragment  //    *******************************************
         initializeMembers()
         initializeFields()
         if (mAttributeOrder == -1) setOnCreateDisplay() else setOnEditDisplay()
-        if (mAttributeOrder != -1 && mUmlClassAttribute.getTypeMultiplicity() === TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
+        if (mAttributeOrder != -1 && mUmlClassAttribute?.typeMultiplicity == TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
         setOnBackPressedCallback()
     }
 
@@ -259,18 +216,18 @@ class AttributeEditorFragment  //    *******************************************
             Toast.makeText(context, "Attribute name cannot be blank", Toast.LENGTH_SHORT).show()
             false
         } else if (mUmlClass!!.containsAttributeNamed(attributeName) &&
-            mUmlClass!!.getAttribute(attributeName).attributeOrder != mAttributeOrder
+            mUmlClass!!.getAttribute(attributeName)?.attributeOrder != mAttributeOrder
         ) {
             Toast.makeText(context, "This named is already used", Toast.LENGTH_SHORT).show()
             false
         } else {
-            mUmlClassAttribute.setName(attributeName)
-            mUmlClassAttribute.setVisibility(visibility)
-            mUmlClassAttribute.setStatic(isStatic)
-            mUmlClassAttribute.setFinal(isFinal)
-            mUmlClassAttribute.setUmlType(type)
-            mUmlClassAttribute.setTypeMultiplicity(multiplicity)
-            mUmlClassAttribute.setArrayDimension(arrayDimension)
+            mUmlClassAttribute?.name = (attributeName)
+            mUmlClassAttribute?.visibility = (visibility)
+            mUmlClassAttribute?.isStatic = (isStatic)
+            mUmlClassAttribute?.isFinal = (isFinal)
+            mUmlClassAttribute?.umlType = (type)
+            mUmlClassAttribute?.typeMultiplicity = (multiplicity)
+            mUmlClassAttribute?.arrayDimension = (arrayDimension)
             true
         }
     }
@@ -289,7 +246,7 @@ class AttributeEditorFragment  //    *******************************************
     private val type: UmlType?
         private get() = UmlType.Companion.valueOf(
             mTypeSpinner!!.selectedItem.toString(),
-            UmlType.Companion.getUmlTypes()
+            UmlType.Companion.umlTypes
         )
     private val multiplicity: TypeMultiplicity
         private get() {
@@ -310,7 +267,7 @@ class AttributeEditorFragment  //    *******************************************
             .setMessage("Are you sure you want to delete this attribute ?")
             .setNegativeButton("NO") { dialog, which -> }
             .setPositiveButton("YES") { dialog, which ->
-                mUmlClass.getAttributes().remove(mUmlClassAttribute)
+                mUmlClass?.attributes?.remove(mUmlClassAttribute)
                 mCallback!!.closeAttributeEditorFragment(fragment)
             }
         val dialog = builder.create()

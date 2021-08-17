@@ -128,9 +128,9 @@ class UmlClassAttribute : AdapterItem {
                 else -> "-"
             }
             completeString = when (typeMultiplicity) {
-                TypeMultiplicity.COLLECTION -> completeString + name + " : <" + umlType.getName() + ">"
-                TypeMultiplicity.ARRAY -> completeString + name + " : [" + umlType.getName() + "]^" + arrayDimension
-                else -> completeString + name + " : " + umlType.getName()
+                TypeMultiplicity.COLLECTION -> completeString + name + " : <" + umlType?.name + ">"
+                TypeMultiplicity.ARRAY -> completeString + name + " : [" + umlType?.name + "]^" + arrayDimension
+                else -> completeString + name + " : " + umlType?.name
             }
             return completeString
         }
@@ -146,7 +146,7 @@ class UmlClassAttribute : AdapterItem {
             jsonObject.put(JSON_CLASS_ATTRIBUTE_VISIBILITY, visibility.toString())
             jsonObject.put(JSON_CLASS_ATTRIBUTE_STATIC, isStatic)
             jsonObject.put(JSON_CLASS_ATTRIBUTE_FINAL, isFinal)
-            jsonObject.put(JSON_CLASS_ATTRIBUTE_TYPE, umlType.getName())
+            jsonObject.put(JSON_CLASS_ATTRIBUTE_TYPE, umlType?.name)
             jsonObject.put(JSON_CLASS_ATTRIBUTE_TYPE_MULTIPLICITY, typeMultiplicity.toString())
             jsonObject.put(JSON_CLASS_ATTRIBUTE_ARRAY_DIMENSION, arrayDimension)
             jsonObject
@@ -173,7 +173,7 @@ class UmlClassAttribute : AdapterItem {
             return try {
                 if (UmlType.Companion.valueOf(
                         jsonObject.getString(JSON_CLASS_ATTRIBUTE_TYPE),
-                        UmlType.Companion.getUmlTypes()
+                        UmlType.Companion.umlTypes
                     ) == null
                 ) UmlType.Companion.createUmlType(
                     jsonObject.getString(
@@ -188,7 +188,7 @@ class UmlClassAttribute : AdapterItem {
                     jsonObject.getBoolean(JSON_CLASS_ATTRIBUTE_FINAL),
                     UmlType.Companion.valueOf(
                         jsonObject.getString(JSON_CLASS_ATTRIBUTE_TYPE),
-                        UmlType.Companion.getUmlTypes()
+                        UmlType.Companion.umlTypes
                     ),
                     TypeMultiplicity.valueOf(
                         jsonObject.getString(

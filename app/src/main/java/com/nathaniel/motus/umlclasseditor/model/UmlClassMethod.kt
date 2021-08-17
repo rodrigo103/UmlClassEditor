@@ -155,26 +155,26 @@ class UmlClassMethod : AdapterItem {
             }
             completeString = completeString + name + "("
             for (p in parameters) {
-                completeString = completeString + p.getName()
+                completeString = completeString + p?.name
                 if (parameters.indexOf(p) != parameters.size - 1) completeString =
                     "$completeString, "
             }
             completeString = "$completeString) : "
             completeString = when (typeMultiplicity) {
-                TypeMultiplicity.COLLECTION -> completeString + "<" + umlType.getName() + ">"
-                TypeMultiplicity.ARRAY -> completeString + "[" + umlType.getName() + "]^" + arrayDimension
-                else -> completeString + umlType.getName()
+                TypeMultiplicity.COLLECTION -> completeString + "<" + umlType?.name + ">"
+                TypeMultiplicity.ARRAY -> completeString + "[" + umlType?.name + "]^" + arrayDimension
+                else -> completeString + umlType?.name
             }
             return completeString
         }
 
     fun findParameterByOrder(parameterOrder: Int): MethodParameter? {
-        for (p in parameters) if (p.getParameterOrder() == parameterOrder) return p
+        for (p in parameters) if (p?.parameterOrder == parameterOrder) return p
         return null
     }
 
     fun getParameter(parameterName: String): MethodParameter? {
-        for (p in parameters) if (p.getName() == parameterName) return p
+        for (p in parameters) if (p?.name == parameterName) return p
         return null
     }
 
@@ -198,7 +198,7 @@ class UmlClassMethod : AdapterItem {
     //    Test methods
     //    **********************************************************************************************
     fun containsParameterNamed(parameterName: String): Boolean {
-        for (p in parameters) if (p.getName() != null && p.getName() == parameterName) return true
+        for (p in parameters) if (p?.name != null && p.name == parameterName) return true
         return false
     }
 
@@ -223,7 +223,7 @@ class UmlClassMethod : AdapterItem {
             jsonObject.put(JSON_CLASS_METHOD_INDEX, methodOrder)
             jsonObject.put(JSON_CLASS_METHOD_VISIBILITY, visibility)
             jsonObject.put(JSON_CLASS_METHOD_STATIC, isStatic)
-            jsonObject.put(JSON_CLASS_METHOD_TYPE, umlType.getName())
+            jsonObject.put(JSON_CLASS_METHOD_TYPE, umlType?.name)
             jsonObject.put(JSON_CLASS_METHOD_TYPE_MULTIPLICITY, typeMultiplicity)
             jsonObject.put(JSON_CLASS_METHOD_ARRAY_DIMENSION, arrayDimension)
             jsonObject.put(JSON_CLASS_METHOD_PARAMETERS, parametersToJSONArray)
@@ -260,7 +260,7 @@ class UmlClassMethod : AdapterItem {
             return try {
                 if (UmlType.Companion.valueOf(
                         jsonObject.getString(JSON_CLASS_METHOD_TYPE),
-                        UmlType.Companion.getUmlTypes()
+                        UmlType.Companion.umlTypes
                     ) == null
                 ) UmlType.Companion.createUmlType(
                     jsonObject.getString(
@@ -274,7 +274,7 @@ class UmlClassMethod : AdapterItem {
                     jsonObject.getBoolean(JSON_CLASS_METHOD_STATIC),
                     UmlType.Companion.valueOf(
                         jsonObject.getString(JSON_CLASS_METHOD_TYPE),
-                        UmlType.Companion.getUmlTypes()
+                        UmlType.Companion.umlTypes
                     ),
                     TypeMultiplicity.valueOf(
                         jsonObject.getString(

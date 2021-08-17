@@ -90,7 +90,7 @@ class UmlClass : UmlType {
     var umlClassAttributeCount: Int
     var methods: ArrayList<UmlClassMethod?>
     var umlClassMethodCount: Int
-    var values: ArrayList<UmlEnumValue?>
+    var values: ArrayList<UmlEnumValue>
     var valueCount: Int
     var classOrder = 0
     var umlClassNormalXPos = 0f
@@ -129,7 +129,7 @@ class UmlClass : UmlType {
         name: String?, classOrder: Int, umlClassType: UmlClassType,
         attributes: ArrayList<UmlClassAttribute?>, attributeCount: Int,
         methods: ArrayList<UmlClassMethod?>, methodCount: Int,
-        values: ArrayList<UmlEnumValue?>, valueCount: Int,
+        values: ArrayList<UmlEnumValue>, valueCount: Int,
         umlClassNormalXPos: Float, umlClassNormalYPos: Float
     ) : super(name, TypeLevel.PROJECT) {
         this.classOrder = classOrder
@@ -148,7 +148,7 @@ class UmlClass : UmlType {
         name: String?, umlClassType: UmlClassType,
         attributes: ArrayList<UmlClassAttribute?>,
         methods: ArrayList<UmlClassMethod?>,
-        values: ArrayList<UmlEnumValue?>,
+        values: ArrayList<UmlEnumValue>,
         umlClassNormalXPos: Float, umlClassNormalYPos: Float
     ) : super(name, TypeLevel.PROJECT) {
         this.umlClassType = umlClassType
@@ -166,29 +166,30 @@ class UmlClass : UmlType {
         get() = umlClassNormalXPos + umlClassNormalWidth
     val normalBottomEnd: Float
         get() = umlClassNormalYPos + umlClassNormalHeight
+
     override var name: String?
-        get() = super.getName()
+        get() = super.name
         set(name) {
-            super.setName(name)
+            super.name = name
         }
 
     fun findAttributeByOrder(attributeOrder: Int): UmlClassAttribute? {
-        for (a in attributes) if (a.getAttributeOrder() == attributeOrder) return a
+        for (a in attributes) if (a?.attributeOrder == attributeOrder) return a
         return null
     }
 
     fun findMethodByOrder(methodOrder: Int): UmlClassMethod? {
-        for (m in methods) if (m.getMethodOrder() == methodOrder) return m
+        for (m in methods) if (m?.methodOrder == methodOrder) return m
         return null
     }
 
     fun findValueByOrder(valueOrder: Int): UmlEnumValue? {
-        for (v in values) if (v.getValueOrder() == valueOrder) return v
+        for (v in values) if (v?.valueOrder == valueOrder) return v
         return null
     }
 
     fun getAttribute(attributeName: String): UmlClassAttribute? {
-        for (a in attributes) if (a.getName() == attributeName) return a
+        for (a in attributes) if (a?.name == attributeName) return a
         return null
     }
 
@@ -213,7 +214,7 @@ class UmlClass : UmlType {
         attributes.remove(attribute)
     }
 
-    fun addValue(value: UmlEnumValue?) {
+    fun addValue(value: UmlEnumValue) {
         values.add(value)
         valueCount++
     }
@@ -262,7 +263,7 @@ class UmlClass : UmlType {
     }
 
     fun isInvolvedInRelation(umlRelation: UmlRelation?): Boolean {
-        return this === umlRelation.getRelationOriginClass() || this === umlRelation.getRelationEndClass()
+        return this === umlRelation?.relationOriginClass || this === umlRelation?.relationEndClass
     }
 
     fun alreadyExists(inProject: UmlProject): Boolean {
@@ -272,7 +273,7 @@ class UmlClass : UmlType {
     }
 
     fun containsAttributeNamed(attributeName: String): Boolean {
-        for (a in attributes) if (a.getName() != null && a.getName() == attributeName) return true
+        for (a in attributes) if (a?.name != null && a?.name == attributeName) return true
         return false
     }
 
@@ -397,11 +398,11 @@ class UmlClass : UmlType {
             return umlClassMethods
         }
 
-        private fun getValuesFromJSONArray(jsonArray: JSONArray): ArrayList<UmlEnumValue?> {
-            val values = ArrayList<UmlEnumValue?>()
+        private fun getValuesFromJSONArray(jsonArray: JSONArray): ArrayList<UmlEnumValue> {
+            val values = ArrayList<UmlEnumValue>()
             var jsonValue = jsonArray.remove(0) as JSONObject
             while (jsonValue != null) {
-                values.add(UmlEnumValue.Companion.fromJSONObject(jsonValue))
+                values.add(UmlEnumValue.Companion.fromJSONObject(jsonValue)!!)
                 jsonValue = jsonArray.remove(0) as JSONObject
             }
             return values

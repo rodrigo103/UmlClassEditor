@@ -1,52 +1,12 @@
 package com.nathaniel.motus.umlclasseditor.view
 
-import android.view.View.OnTouchListener
-import com.nathaniel.motus.umlclasseditor.view.GraphFragment
-import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
-import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
-import android.graphics.Typeface
-import android.graphics.DashPathEffect
-import android.content.res.TypedArray
 import com.nathaniel.motus.umlclasseditor.R
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
-import com.nathaniel.motus.umlclasseditor.view.GraphView
-import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
-import android.view.MotionEvent
-import android.content.DialogInterface
-import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
-import com.nathaniel.motus.umlclasseditor.view.EditorFragment
 import android.widget.AdapterView.OnItemLongClickListener
 import android.widget.ExpandableListView.OnChildClickListener
-import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
 import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
-import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
-import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
-import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
-import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
-import org.json.JSONArray
-import org.json.JSONObject
-import org.json.JSONException
-import kotlin.jvm.JvmOverloads
-import android.content.pm.PackageManager
-import android.content.pm.PackageInfo
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.navigation.NavigationView
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.core.view.MenuCompat
-import androidx.annotation.RequiresApi
-import android.os.Build
-import android.content.SharedPreferences
-import android.content.SharedPreferences.Editor
-import com.nathaniel.motus.umlclasseditor.controller.MainActivity
-import androidx.core.view.GravityCompat
-import android.content.Intent
-import android.util.SparseBooleanArray
-import android.text.Html
-import android.app.Activity
 import android.app.AlertDialog
 import android.view.View
 import android.widget.*
@@ -114,8 +74,8 @@ class MethodEditorFragment  //    **********************************************
     override fun configureViews() {
         mEditMethodText = activity!!.findViewById(R.id.edit_method_text)
         mDeleteMethodButton = activity!!.findViewById(R.id.delete_method_button)
-        mDeleteMethodButton.setOnClickListener(this)
-        mDeleteMethodButton.setTag(DELETE_METHOD_BUTTON_TAG)
+        mDeleteMethodButton?.setOnClickListener(this)
+        mDeleteMethodButton?.setTag(DELETE_METHOD_BUTTON_TAG)
         mMethodNameEdit = activity!!.findViewById(R.id.method_name_input)
         mPublicRadio = activity!!.findViewById(R.id.method_public_radio)
         mProtectedRadio = activity!!.findViewById(R.id.method_protected_radio)
@@ -124,49 +84,49 @@ class MethodEditorFragment  //    **********************************************
         mTypeSpinner = activity!!.findViewById(R.id.method_type_spinner)
         mMethodMultiplicityRadioGroup =
             activity!!.findViewById(R.id.method_multiplicity_radio_group)
-        mMethodMultiplicityRadioGroup.setOnCheckedChangeListener(this)
+        mMethodMultiplicityRadioGroup?.setOnCheckedChangeListener(this)
         mSingleRadio = activity!!.findViewById(R.id.method_simple_radio)
         mCollectionRadio = activity!!.findViewById(R.id.method_collection_radio)
         mArrayRadio = activity!!.findViewById(R.id.method_array_radio)
         mDimText = activity!!.findViewById(R.id.method_dimension_text)
         mDimEdit = activity!!.findViewById(R.id.method_dimension_input)
         mParameterList = activity!!.findViewById(R.id.method_parameters_list)
-        mParameterList.setOnChildClickListener(this)
-        mParameterList.setOnItemLongClickListener(this)
+        mParameterList?.setOnChildClickListener(this)
+        mParameterList?.setOnItemLongClickListener(this)
         mCancelButton = activity!!.findViewById(R.id.method_cancel_button)
-        mCancelButton.setOnClickListener(this)
-        mCancelButton.setTag(CANCEL_BUTTON_TAG)
+        mCancelButton?.setOnClickListener(this)
+        mCancelButton?.setTag(CANCEL_BUTTON_TAG)
         mOKButton = activity!!.findViewById(R.id.method_ok_button)
-        mOKButton.setOnClickListener(this)
-        mOKButton.setTag(OK_BUTTON_TAG)
+        mOKButton?.setOnClickListener(this)
+        mOKButton?.setTag(OK_BUTTON_TAG)
     }
 
     override fun initializeMembers() {
-        mUmlClass = mCallback.project.findClassByOrder(mClassOrder)
+        mUmlClass = mCallback?.project?.findClassByOrder(mClassOrder)
         if (mMethodOrder != -1) {
             mUmlClassMethod = mUmlClass!!.findMethodByOrder(mMethodOrder)
         } else {
-            mUmlClassMethod = UmlClassMethod(mUmlClass.getUmlClassMethodCount())
+            mUmlClassMethod = UmlClassMethod(mUmlClass?.umlClassMethodCount!!)
             mUmlClass!!.addMethod(mUmlClassMethod)
         }
     }
 
     override fun initializeFields() {
         if (mMethodOrder != -1) {
-            mMethodNameEdit.setText(mUmlClassMethod.getName())
-            when (mUmlClassMethod.getVisibility()) {
+            mMethodNameEdit?.setText(mUmlClassMethod?.name)
+            when (mUmlClassMethod?.visibility) {
                 Visibility.PUBLIC -> mPublicRadio!!.isChecked = true
                 Visibility.PROTECTED -> mProtectedRadio!!.isChecked = true
                 else -> mPrivateRadio!!.isChecked = true
             }
             mStaticCheck!!.isChecked = mUmlClassMethod!!.isStatic
-            when (mUmlClassMethod.getTypeMultiplicity()) {
+            when (mUmlClassMethod?.typeMultiplicity) {
                 TypeMultiplicity.SINGLE -> mSingleRadio!!.isChecked = true
                 TypeMultiplicity.COLLECTION -> mCollectionRadio!!.isChecked = true
                 else -> mArrayRadio!!.isChecked = true
             }
-            mDimEdit!!.setText(Integer.toString(mUmlClassMethod.getArrayDimension()))
-            if (mUmlClassMethod.getTypeMultiplicity() === TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
+            mDimEdit!!.setText(Integer.toString(mUmlClassMethod?.arrayDimension!!))
+            if (mUmlClassMethod?.typeMultiplicity == TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
         } else {
             mMethodNameEdit!!.setText("")
             mPublicRadio!!.isChecked = true
@@ -180,13 +140,13 @@ class MethodEditorFragment  //    **********************************************
     }
 
     private fun populateTypeSpinner() {
-        val spinnerArray: MutableList<String?> = ArrayList()
-        for (t in UmlType.Companion.getUmlTypes()) spinnerArray.add(t.getName())
+        val spinnerArray = mutableListOf<String>()
+        for (t in UmlType.Companion.umlTypes) spinnerArray.add(t?.name!!)
         Collections.sort(spinnerArray, TypeNameComparator())
         val adapter = ArrayAdapter(context!!, android.R.layout.simple_spinner_item, spinnerArray)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         mTypeSpinner!!.adapter = adapter
-        if (mMethodOrder != -1) mTypeSpinner!!.setSelection(spinnerArray.indexOf(mUmlClassMethod.getUmlType().name)) else mTypeSpinner!!.setSelection(
+        if (mMethodOrder != -1) mTypeSpinner!!.setSelection(spinnerArray.indexOf(mUmlClassMethod?.umlType?.name)) else mTypeSpinner!!.setSelection(
             spinnerArray.indexOf("void")
         )
     }
@@ -195,16 +155,21 @@ class MethodEditorFragment  //    **********************************************
         var parameterGroupIsExpanded = false
         if (mParameterList!!.expandableListAdapter != null && mParameterList!!.isGroupExpanded(0)) parameterGroupIsExpanded =
             true
-        val parameterList: MutableList<AdapterItem?> = ArrayList()
-        for (p in mUmlClassMethod.getParameters()) parameterList.add(p)
+
+        val parameterList = mutableListOf<AdapterItem>()
+        for (p in mUmlClassMethod?.parameters!!) parameterList.add(p!!)
         Collections.sort(parameterList, AdapterItemComparator())
         parameterList.add(0, AddItemString(getString(R.string.new_parameter_string)))
-        val hashMap = HashMap<String, List<AdapterItem?>>()
+
+        val hashMap = HashMap<String, List<AdapterItem>>()
         hashMap[getString(R.string.parameters_string)] = parameterList
+
         val title: MutableList<String> = ArrayList()
         title.add(getString(R.string.parameters_string))
+
         val adapter = CustomExpandableListViewAdapter(context, title, hashMap)
         mParameterList!!.setAdapter(adapter)
+
         if (parameterGroupIsExpanded) mParameterList!!.expandGroup(0)
     }
 
@@ -234,7 +199,7 @@ class MethodEditorFragment  //    **********************************************
         initializeMembers()
         initializeFields()
         if (mMethodOrder != -1) setOnEditDisplay() else setOnCreateDisplay()
-        if (mMethodOrder != -1 && mUmlClassMethod.getTypeMultiplicity() === TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
+        if (mMethodOrder != -1 && mUmlClassMethod?.typeMultiplicity == TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
         setOnBackPressedCallback()
     }
 
@@ -289,11 +254,11 @@ class MethodEditorFragment  //    **********************************************
         val item = expandableListView.expandableListAdapter.getChild(i, i1) as AdapterItem
         if (item.name == getString(R.string.new_parameter_string) && i1 == 0) mCallback!!.openParameterEditorFragment(
             -1,
-            mUmlClassMethod.getMethodOrder(),
-            mUmlClass.getClassOrder()
+            mUmlClassMethod?.methodOrder!!,
+            mUmlClass?.classOrder!!
         ) else mCallback!!.openParameterEditorFragment(
             (item as MethodParameter).parameterOrder,
-            mUmlClassMethod.getMethodOrder(), mUmlClass.getClassOrder()
+            mUmlClassMethod?.methodOrder!!, mUmlClass?.classOrder!!
         )
         return true
     }
@@ -314,12 +279,12 @@ class MethodEditorFragment  //    **********************************************
             Toast.makeText(context, "Method name cannot be blank", Toast.LENGTH_SHORT).show()
             return false
         } else {
-            mUmlClassMethod.setName(methodName)
-            mUmlClassMethod.setVisibility(methodVisibility)
-            mUmlClassMethod.setStatic(isStatic)
-            mUmlClassMethod.setUmlType(methodType)
-            mUmlClassMethod.setTypeMultiplicity(methodMultiplicity)
-            mUmlClassMethod.setArrayDimension(arrayDimension)
+            mUmlClassMethod?.name = (methodName)
+            mUmlClassMethod?.visibility = (methodVisibility)
+            mUmlClassMethod?.isStatic = (isStatic)
+            mUmlClassMethod?.umlType = (methodType)
+            mUmlClassMethod?.typeMultiplicity = (methodMultiplicity)
+            mUmlClassMethod?.arrayDimension = (arrayDimension)
         }
         return if (mUmlClass!!.containsEquivalentMethodTo(mUmlClassMethod)) {
             Toast.makeText(context, "This method is already defined", Toast.LENGTH_SHORT).show()
@@ -339,7 +304,7 @@ class MethodEditorFragment  //    **********************************************
     private val methodType: UmlType?
         private get() = UmlType.Companion.valueOf(
             mTypeSpinner!!.selectedItem.toString(),
-            UmlType.Companion.getUmlTypes()
+            UmlType.Companion.umlTypes
         )
     private val methodMultiplicity: TypeMultiplicity
         private get() {
