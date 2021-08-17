@@ -1,16 +1,17 @@
 package com.nathaniel.motus.umlclasseditor.view
 
-import com.nathaniel.motus.umlclasseditor.R
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.*
 import android.widget.AdapterView.OnItemLongClickListener
 import android.widget.ExpandableListView.OnChildClickListener
-import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
-import android.app.AlertDialog
-import android.view.View
-import android.widget.*
 import androidx.fragment.app.Fragment
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import com.nathaniel.motus.umlclasseditor.databinding.FragmentMethodEditorBinding
 import com.nathaniel.motus.umlclasseditor.model.*
 import java.util.*
 
@@ -24,28 +25,15 @@ class MethodEditorFragment  //    **********************************************
 //    **********************************************************************************************
     : EditorFragment(), View.OnClickListener, RadioGroup.OnCheckedChangeListener,
     OnItemLongClickListener, OnChildClickListener {
+
+    private var _binding: FragmentMethodEditorBinding? = null
+    private val binding get() = _binding!!
+
     private var mMethodOrder = 0
     private var mClassOrder = 0
     private var mUmlClassMethod: UmlClassMethod? = null
     private var mUmlClass: UmlClass? = null
     private var mClassEditorFragmentTag: String? = null
-    private var mEditMethodText: TextView? = null
-    private var mDeleteMethodButton: Button? = null
-    private var mMethodNameEdit: EditText? = null
-    private var mPublicRadio: RadioButton? = null
-    private var mProtectedRadio: RadioButton? = null
-    private var mPrivateRadio: RadioButton? = null
-    private var mStaticCheck: CheckBox? = null
-    private var mTypeSpinner: Spinner? = null
-    private var mMethodMultiplicityRadioGroup: RadioGroup? = null
-    private var mSingleRadio: RadioButton? = null
-    private var mCollectionRadio: RadioButton? = null
-    private var mArrayRadio: RadioButton? = null
-    private var mDimText: TextView? = null
-    private var mDimEdit: EditText? = null
-    private var mParameterList: ExpandableListView? = null
-    private var mCancelButton: Button? = null
-    private var mOKButton: Button? = null
 
     //    **********************************************************************************************
     //    Fragment events
@@ -55,7 +43,14 @@ class MethodEditorFragment  //    **********************************************
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_method_editor, container, false)
+        _binding = FragmentMethodEditorBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     //    **********************************************************************************************
@@ -72,33 +67,15 @@ class MethodEditorFragment  //    **********************************************
     }
 
     override fun configureViews() {
-        mEditMethodText = activity!!.findViewById(R.id.edit_method_text)
-        mDeleteMethodButton = activity!!.findViewById(R.id.delete_method_button)
-        mDeleteMethodButton?.setOnClickListener(this)
-        mDeleteMethodButton?.setTag(DELETE_METHOD_BUTTON_TAG)
-        mMethodNameEdit = activity!!.findViewById(R.id.method_name_input)
-        mPublicRadio = activity!!.findViewById(R.id.method_public_radio)
-        mProtectedRadio = activity!!.findViewById(R.id.method_protected_radio)
-        mPrivateRadio = activity!!.findViewById(R.id.method_private_radio)
-        mStaticCheck = activity!!.findViewById(R.id.method_static_check)
-        mTypeSpinner = activity!!.findViewById(R.id.method_type_spinner)
-        mMethodMultiplicityRadioGroup =
-            activity!!.findViewById(R.id.method_multiplicity_radio_group)
-        mMethodMultiplicityRadioGroup?.setOnCheckedChangeListener(this)
-        mSingleRadio = activity!!.findViewById(R.id.method_simple_radio)
-        mCollectionRadio = activity!!.findViewById(R.id.method_collection_radio)
-        mArrayRadio = activity!!.findViewById(R.id.method_array_radio)
-        mDimText = activity!!.findViewById(R.id.method_dimension_text)
-        mDimEdit = activity!!.findViewById(R.id.method_dimension_input)
-        mParameterList = activity!!.findViewById(R.id.method_parameters_list)
-        mParameterList?.setOnChildClickListener(this)
-        mParameterList?.setOnItemLongClickListener(this)
-        mCancelButton = activity!!.findViewById(R.id.method_cancel_button)
-        mCancelButton?.setOnClickListener(this)
-        mCancelButton?.setTag(CANCEL_BUTTON_TAG)
-        mOKButton = activity!!.findViewById(R.id.method_ok_button)
-        mOKButton?.setOnClickListener(this)
-        mOKButton?.setTag(OK_BUTTON_TAG)
+        binding.deleteMethodButton.setOnClickListener(this)
+        binding.deleteMethodButton.tag = DELETE_METHOD_BUTTON_TAG
+        binding.methodMultiplicityRadioGroup.setOnCheckedChangeListener(this)
+        binding.methodParametersList.setOnChildClickListener(this)
+        binding.methodParametersList.onItemLongClickListener = this
+        binding.methodCancelButton.setOnClickListener(this)
+        binding.methodCancelButton.tag = CANCEL_BUTTON_TAG
+        binding.methodOkButton.setOnClickListener(this)
+        binding.methodOkButton.tag = OK_BUTTON_TAG
     }
 
     override fun initializeMembers() {
@@ -113,26 +90,26 @@ class MethodEditorFragment  //    **********************************************
 
     override fun initializeFields() {
         if (mMethodOrder != -1) {
-            mMethodNameEdit?.setText(mUmlClassMethod?.name)
+            binding.methodNameInput.setText(mUmlClassMethod?.name)
             when (mUmlClassMethod?.visibility) {
-                Visibility.PUBLIC -> mPublicRadio!!.isChecked = true
-                Visibility.PROTECTED -> mProtectedRadio!!.isChecked = true
-                else -> mPrivateRadio!!.isChecked = true
+                Visibility.PUBLIC -> binding.methodPublicRadio.isChecked = true
+                Visibility.PROTECTED -> binding.methodProtectedRadio.isChecked = true
+                else -> binding.methodPrivateRadio.isChecked = true
             }
-            mStaticCheck!!.isChecked = mUmlClassMethod!!.isStatic
+            binding.methodStaticCheck.isChecked = mUmlClassMethod!!.isStatic
             when (mUmlClassMethod?.typeMultiplicity) {
-                TypeMultiplicity.SINGLE -> mSingleRadio!!.isChecked = true
-                TypeMultiplicity.COLLECTION -> mCollectionRadio!!.isChecked = true
-                else -> mArrayRadio!!.isChecked = true
+                TypeMultiplicity.SINGLE -> binding.methodSimpleRadio.isChecked = true
+                TypeMultiplicity.COLLECTION -> binding.methodCollectionRadio.isChecked = true
+                else -> binding.methodArrayRadio.isChecked = true
             }
-            mDimEdit!!.setText(Integer.toString(mUmlClassMethod?.arrayDimension!!))
+            binding.methodDimensionInput.setText(Integer.toString(mUmlClassMethod?.arrayDimension!!))
             if (mUmlClassMethod?.typeMultiplicity == TypeMultiplicity.ARRAY) setOnArrayDisplay() else setOnSingleDisplay()
         } else {
-            mMethodNameEdit!!.setText("")
-            mPublicRadio!!.isChecked = true
-            mStaticCheck!!.isChecked = false
-            mSingleRadio!!.isChecked = true
-            mDimEdit!!.setText("")
+            binding.methodNameInput.setText("")
+            binding.methodPublicRadio.isChecked = true
+            binding.methodStaticCheck.isChecked = false
+            binding.methodSimpleRadio.isChecked = true
+            binding.methodDimensionInput.setText("")
             setOnSingleDisplay()
         }
         populateTypeSpinner()
@@ -145,15 +122,15 @@ class MethodEditorFragment  //    **********************************************
         Collections.sort(spinnerArray, TypeNameComparator())
         val adapter = ArrayAdapter(context!!, android.R.layout.simple_spinner_item, spinnerArray)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        mTypeSpinner!!.adapter = adapter
-        if (mMethodOrder != -1) mTypeSpinner!!.setSelection(spinnerArray.indexOf(mUmlClassMethod?.umlType?.name)) else mTypeSpinner!!.setSelection(
+        binding.methodTypeSpinner.adapter = adapter
+        if (mMethodOrder != -1) binding.methodTypeSpinner.setSelection(spinnerArray.indexOf(mUmlClassMethod?.umlType?.name)) else binding.methodTypeSpinner!!.setSelection(
             spinnerArray.indexOf("void")
         )
     }
 
     private fun populateParameterListView() {
         var parameterGroupIsExpanded = false
-        if (mParameterList!!.expandableListAdapter != null && mParameterList!!.isGroupExpanded(0)) parameterGroupIsExpanded =
+        if (binding.methodParametersList.expandableListAdapter != null && binding.methodParametersList.isGroupExpanded(0)) parameterGroupIsExpanded =
             true
 
         val parameterList = mutableListOf<AdapterItem>()
@@ -168,29 +145,29 @@ class MethodEditorFragment  //    **********************************************
         title.add(getString(R.string.parameters_string))
 
         val adapter = CustomExpandableListViewAdapter(context, title, hashMap)
-        mParameterList!!.setAdapter(adapter)
+        binding.methodParametersList.setAdapter(adapter)
 
-        if (parameterGroupIsExpanded) mParameterList!!.expandGroup(0)
+        if (parameterGroupIsExpanded) binding.methodParametersList.expandGroup(0)
     }
 
     private fun setOnEditDisplay() {
-        mEditMethodText!!.text = "Edit method"
-        mDeleteMethodButton!!.visibility = View.VISIBLE
+        binding.editMethodText.text = "Edit method"
+        binding.deleteMethodButton.visibility = View.VISIBLE
     }
 
     private fun setOnCreateDisplay() {
-        mEditMethodText!!.text = "Create method"
-        mDeleteMethodButton!!.visibility = View.INVISIBLE
+        binding.editMethodText.text = "Create method"
+        binding.deleteMethodButton.visibility = View.INVISIBLE
     }
 
     private fun setOnArrayDisplay() {
-        mDimText!!.visibility = View.VISIBLE
-        mDimEdit!!.visibility = View.VISIBLE
+        binding.methodDimensionText.visibility = View.VISIBLE
+        binding.methodDimensionInput.visibility = View.VISIBLE
     }
 
     private fun setOnSingleDisplay() {
-        mDimText!!.visibility = View.INVISIBLE
-        mDimEdit!!.visibility = View.INVISIBLE
+        binding.methodDimensionText.visibility = View.INVISIBLE
+        binding.methodDimensionInput.visibility = View.INVISIBLE
     }
 
     fun updateMethodEditorFragment(methodOrder: Int, classOrder: Int) {
@@ -293,26 +270,26 @@ class MethodEditorFragment  //    **********************************************
     }
 
     private val methodName: String
-        private get() = mMethodNameEdit!!.text.toString()
+        private get() = binding.methodNameInput.text.toString()
     private val methodVisibility: Visibility
         private get() {
-            if (mPublicRadio!!.isChecked) return Visibility.PUBLIC
-            return if (mPrivateRadio!!.isChecked) Visibility.PROTECTED else Visibility.PRIVATE
+            if (binding.methodPublicRadio.isChecked) return Visibility.PUBLIC
+            return if (binding.methodPrivateRadio.isChecked) Visibility.PROTECTED else Visibility.PRIVATE
         }
     private val isStatic: Boolean
-        private get() = mStaticCheck!!.isChecked
+        private get() = binding.methodStaticCheck.isChecked
     private val methodType: UmlType?
         private get() = UmlType.Companion.valueOf(
-            mTypeSpinner!!.selectedItem.toString(),
+            binding.methodTypeSpinner.selectedItem.toString(),
             UmlType.Companion.umlTypes
         )
     private val methodMultiplicity: TypeMultiplicity
         private get() {
-            if (mSingleRadio!!.isChecked) return TypeMultiplicity.SINGLE
-            return if (mCollectionRadio!!.isChecked) TypeMultiplicity.COLLECTION else TypeMultiplicity.ARRAY
+            if (binding.methodSimpleRadio.isChecked) return TypeMultiplicity.SINGLE
+            return if (binding.methodCollectionRadio.isChecked) TypeMultiplicity.COLLECTION else TypeMultiplicity.ARRAY
         }
     private val arrayDimension: Int
-        private get() = if (mDimEdit!!.text.toString() == "") 0 else mDimEdit!!.text.toString()
+        private get() = if (binding.methodDimensionInput.text.toString() == "") 0 else binding.methodDimensionInput.text.toString()
             .toInt()
 
     fun updateLists() {
