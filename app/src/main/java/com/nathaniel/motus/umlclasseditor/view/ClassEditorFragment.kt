@@ -12,6 +12,7 @@ import android.widget.ExpandableListView.OnChildClickListener
 import androidx.fragment.app.Fragment
 import com.nathaniel.motus.umlclasseditor.R
 import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import com.nathaniel.motus.umlclasseditor.databinding.FragmentClassEditorBinding
 import com.nathaniel.motus.umlclasseditor.model.*
 import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
 import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
@@ -22,18 +23,10 @@ class ClassEditorFragment  //    ***********************************************
 //    **********************************************************************************************
     : EditorFragment(), View.OnClickListener, OnItemLongClickListener,
     RadioGroup.OnCheckedChangeListener, OnChildClickListener {
-    private var mEditClassText: TextView? = null
-    private var mClassNameEdit: EditText? = null
-    private var mDeleteClassButton: Button? = null
-    private var mClassTypeRadioGroup: RadioGroup? = null
-    private var mJavaRadio: RadioButton? = null
-    private var mAbstractRadio: RadioButton? = null
-    private var mInterfaceRadio: RadioButton? = null
-    private var mEnumRadio: RadioButton? = null
-    private var mMemberListView: ExpandableListView? = null
-    private var mOKButton: Button? = null
-    private var mCancelButton: Button? = null
-    private var mOKCancelLinearLayout: LinearLayout? = null
+
+    private var _binding: FragmentClassEditorBinding? = null
+    private val binding get() = _binding!!
+
     private var mXPos = 0f
     private var mYPos = 0f
     private var mClassOrder = 0
@@ -47,7 +40,14 @@ class ClassEditorFragment  //    ***********************************************
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_class_editor, container, false)
+        _binding = FragmentClassEditorBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     //    **********************************************************************************************
@@ -64,28 +64,16 @@ class ClassEditorFragment  //    ***********************************************
     }
 
     override fun configureViews() {
-        mEditClassText = activity!!.findViewById(R.id.edit_class_text)
-        mClassNameEdit = activity!!.findViewById(R.id.class_name_input)
-        mDeleteClassButton = activity!!.findViewById(R.id.delete_class_button)
-        mDeleteClassButton?.setTag(DELETE_CLASS_BUTTON_TAG)
-        mDeleteClassButton?.setOnClickListener(this)
-        mClassTypeRadioGroup = activity!!.findViewById(R.id.class_type_radio_group)
-        mClassTypeRadioGroup?.setOnCheckedChangeListener(this)
-        mJavaRadio = activity!!.findViewById(R.id.class_java_radio)
-        mAbstractRadio = activity!!.findViewById(R.id.class_abstract_radio)
-        mInterfaceRadio = activity!!.findViewById(R.id.class_interface_radio)
-        mEnumRadio = activity!!.findViewById(R.id.class_enum_radio)
-        mMemberListView = activity!!.findViewById(R.id.class_members_list)
-        mMemberListView?.setTag(MEMBER_LIST_TAG)
-        mMemberListView?.setOnChildClickListener(this)
-        mMemberListView?.setOnItemLongClickListener(this)
-        mOKButton = activity!!.findViewById(R.id.class_ok_button)
-        mOKButton?.setTag(OK_BUTTON_TAG)
-        mOKButton?.setOnClickListener(this)
-        mCancelButton = activity!!.findViewById(R.id.class_cancel_button)
-        mCancelButton?.setTag(CANCEL_BUTTON_TAG)
-        mCancelButton?.setOnClickListener(this)
-        mOKCancelLinearLayout = activity!!.findViewById(R.id.class_ok_cancel_linear)
+        binding.deleteClassButton.tag = DELETE_CLASS_BUTTON_TAG
+        binding.deleteClassButton.setOnClickListener(this)
+        binding.classTypeRadioGroup.setOnCheckedChangeListener(this)
+        binding.classMembersList.tag = MEMBER_LIST_TAG
+        binding.classMembersList.setOnChildClickListener(this)
+        binding.classMembersList.onItemLongClickListener = this
+        binding.classOkButton.tag = OK_BUTTON_TAG
+        binding.classOkButton.setOnClickListener(this)
+        binding.classCancelButton.tag = CANCEL_BUTTON_TAG
+        binding.classCancelButton.setOnClickListener(this)
     }
 
     override fun initializeMembers() {
@@ -102,16 +90,16 @@ class ClassEditorFragment  //    ***********************************************
 
     override fun initializeFields() {
         if (mClassOrder != -1) {
-            mClassNameEdit?.setText(mUmlClass?.name)
+            binding.classNameInput.setText(mUmlClass?.name)
             when (mUmlClass?.umlClassType) {
-                UmlClassType.JAVA_CLASS -> mJavaRadio!!.isChecked = true
-                UmlClassType.ABSTRACT_CLASS -> mAbstractRadio!!.isChecked = true
-                UmlClassType.INTERFACE -> mInterfaceRadio!!.isChecked = true
-                else -> mEnumRadio!!.isChecked = true
+                UmlClassType.JAVA_CLASS -> binding.classJavaRadio.isChecked = true
+                UmlClassType.ABSTRACT_CLASS -> binding.classAbstractRadio.isChecked = true
+                UmlClassType.INTERFACE -> binding.classInterfaceRadio.isChecked = true
+                else -> binding.classEnumRadio.isChecked = true
             }
         } else {
-            mClassNameEdit!!.setText("")
-            mJavaRadio!!.isChecked = true
+            binding.classNameInput.setText("")
+            binding.classJavaRadio.isChecked = true
         }
         updateLists()
     }
@@ -119,9 +107,9 @@ class ClassEditorFragment  //    ***********************************************
     private fun populateMemberListViewForJavaClass() {
         var attributeGroupIsExpanded = false
         var methodGroupIsExpanded = false
-        if (mMemberListView!!.expandableListAdapter != null) {
-            if (mMemberListView!!.isGroupExpanded(0)) attributeGroupIsExpanded = true
-            if (mMemberListView!!.isGroupExpanded(1)) methodGroupIsExpanded = true
+        if (binding.classMembersList.expandableListAdapter != null) {
+            if (binding.classMembersList.isGroupExpanded(0)) attributeGroupIsExpanded = true
+            if (binding.classMembersList.isGroupExpanded(1)) methodGroupIsExpanded = true
         }
         val attributeList = mutableListOf<AdapterItem>()
         for (a in mUmlClass?.attributes!!) attributeList.add(a!!)
@@ -142,10 +130,10 @@ class ClassEditorFragment  //    ***********************************************
         hashMap[getString(R.string.methods_string)] = methodList
 
         val adapter = CustomExpandableListViewAdapter(context, title, hashMap)
-        mMemberListView!!.setAdapter(adapter)
+        binding.classMembersList.setAdapter(adapter)
 
-        if (attributeGroupIsExpanded) mMemberListView!!.expandGroup(0)
-        if (methodGroupIsExpanded) mMemberListView!!.expandGroup(1)
+        if (attributeGroupIsExpanded) binding.classMembersList.expandGroup(0)
+        if (methodGroupIsExpanded) binding.classMembersList.expandGroup(1)
     }
 
     private fun populateMemberListViewForEnum() {
@@ -158,7 +146,7 @@ class ClassEditorFragment  //    ***********************************************
         val hashMap = HashMap<String, List<AdapterItem>>()
         hashMap[getString(R.string.values_string)] = valueList
         val adapter = CustomExpandableListViewAdapter(context, title, hashMap)
-        mMemberListView!!.setAdapter(adapter)
+        binding.classMembersList.setAdapter(adapter)
     }
 
     fun updateLists() {
@@ -166,13 +154,13 @@ class ClassEditorFragment  //    ***********************************************
     }
 
     private fun setOnEditDisplay() {
-        mEditClassText!!.text = "Edit class"
-        mDeleteClassButton!!.visibility = View.VISIBLE
+        binding.editClassText.text = "Edit class"
+        binding.deleteClassButton.visibility = View.VISIBLE
     }
 
     private fun setOnCreateDisplay() {
-        mEditClassText!!.text = "Create class"
-        mDeleteClassButton!!.visibility = View.INVISIBLE
+        binding.editClassText.text = "Create class"
+        binding.deleteClassButton.visibility = View.INVISIBLE
     }
 
     fun updateClassEditorFragment(xPos: Float, yPos: Float, classOrder: Int) {
@@ -307,12 +295,12 @@ class ClassEditorFragment  //    ***********************************************
     }
 
     private val className: String
-        private get() = mClassNameEdit!!.text.toString()
+        private get() = binding.classNameInput.text.toString()
     private val classType: UmlClassType
         private get() {
-            if (mJavaRadio!!.isChecked) return UmlClassType.JAVA_CLASS
-            if (mAbstractRadio!!.isChecked) return UmlClassType.ABSTRACT_CLASS
-            return if (mInterfaceRadio!!.isChecked) UmlClassType.INTERFACE else UmlClassType.ENUM
+            if (binding.classJavaRadio.isChecked) return UmlClassType.JAVA_CLASS
+            if (binding.classAbstractRadio.isChecked) return UmlClassType.ABSTRACT_CLASS
+            return if (binding.classInterfaceRadio.isChecked) UmlClassType.INTERFACE else UmlClassType.ENUM
         }
 
     //    **********************************************************************************************
