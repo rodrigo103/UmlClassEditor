@@ -1,27 +1,20 @@
 package com.nathaniel.motus.umlclasseditor.view
 
-import com.nathaniel.motus.umlclasseditor.model.UmlClass
-import com.nathaniel.motus.umlclasseditor.R
-import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
-import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
-import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
-import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.ViewGroup
-import android.widget.AdapterView.OnItemLongClickListener
-import android.widget.ExpandableListView.OnChildClickListener
-import com.nathaniel.motus.umlclasseditor.model.AdapterItem
-import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
-import com.nathaniel.motus.umlclasseditor.model.AddItemString
-import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
-import com.nathaniel.motus.umlclasseditor.model.UmlType
-import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
 import android.app.AlertDialog
 import android.app.Dialog
+import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
+import android.widget.AdapterView.OnItemLongClickListener
+import android.widget.ExpandableListView.OnChildClickListener
 import androidx.fragment.app.Fragment
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
+import com.nathaniel.motus.umlclasseditor.model.*
+import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
+import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
 import java.util.*
 
 class ClassEditorFragment  //    **********************************************************************************************
@@ -131,19 +124,16 @@ class ClassEditorFragment  //    ***********************************************
             if (mMemberListView!!.isGroupExpanded(1)) methodGroupIsExpanded = true
         }
         val attributeList = mutableListOf<AdapterItem>()
-//        val attributeList: MutableList<AdapterItem?> = ArrayList()
         for (a in mUmlClass?.attributes!!) attributeList.add(a!!)
         Collections.sort(attributeList, AdapterItemComparator())
         attributeList.add(0, AddItemString(getString(R.string.new_attribute_string)))
 
         val methodList = mutableListOf<AdapterItem>()
-//        val methodList: MutableList<AdapterItem?> = ArrayList()
         for (m in mUmlClass?.methods!!) methodList.add(m!!)
         Collections.sort(methodList, AdapterItemComparator())
         methodList.add(0, AddItemString(getString(R.string.new_method_string)))
 
         val title = mutableListOf<String>()
-//        val title: List<String> = ArrayList()
         title.add(0, getString(R.string.attributes_string))
         title.add(1, getString(R.string.methods_string))
 
@@ -160,7 +150,6 @@ class ClassEditorFragment  //    ***********************************************
 
     private fun populateMemberListViewForEnum() {
         val valueList = mutableListOf<AdapterItem>()
-//        val valueList: MutableList<AdapterItem?> = ArrayList()
         valueList.addAll(mUmlClass?.values!!)
         Collections.sort(valueList, AdapterItemComparator())
         valueList.add(0, AddItemString(getString(R.string.new_value_string)))

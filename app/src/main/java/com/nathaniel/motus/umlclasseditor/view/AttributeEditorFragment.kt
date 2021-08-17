@@ -1,56 +1,13 @@
 package com.nathaniel.motus.umlclasseditor.view
 
-import android.view.View.OnTouchListener
-import com.nathaniel.motus.umlclasseditor.view.GraphFragment
-import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
-import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
-import android.graphics.Typeface
-import android.graphics.DashPathEffect
-import android.content.res.TypedArray
-import com.nathaniel.motus.umlclasseditor.R
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
-import com.nathaniel.motus.umlclasseditor.view.GraphView
-import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
-import android.view.MotionEvent
-import android.content.DialogInterface
-import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
-import com.nathaniel.motus.umlclasseditor.view.EditorFragment
-import android.widget.AdapterView.OnItemLongClickListener
-import android.widget.ExpandableListView.OnChildClickListener
-import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
-import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
-import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
-import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
-import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
-import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
-import org.json.JSONArray
-import org.json.JSONObject
-import org.json.JSONException
-import kotlin.jvm.JvmOverloads
-import android.content.pm.PackageManager
-import android.content.pm.PackageInfo
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.navigation.NavigationView
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.core.view.MenuCompat
-import androidx.annotation.RequiresApi
-import android.os.Build
-import android.content.SharedPreferences
-import android.content.SharedPreferences.Editor
-import com.nathaniel.motus.umlclasseditor.controller.MainActivity
-import androidx.core.view.GravityCompat
-import android.content.Intent
-import android.util.SparseBooleanArray
-import android.text.Html
-import android.app.Activity
-import android.app.AlertDialog
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
+import com.nathaniel.motus.umlclasseditor.R
 import com.nathaniel.motus.umlclasseditor.model.*
 import java.util.*
 
@@ -179,8 +136,6 @@ class AttributeEditorFragment  //    *******************************************
 
     private fun populateTypeSpinner() {
         val spinnerArray = mutableListOf<String>()
-//        val spinnerArray: MutableList<String?> = ArrayList()
-
         for (t in UmlType.Companion?.umlTypes) if (t?.name != "void") spinnerArray.add(t?.name!!)
         Collections.sort(spinnerArray, TypeNameComparator())
         val adapter = ArrayAdapter(context!!, android.R.layout.simple_spinner_item, spinnerArray)

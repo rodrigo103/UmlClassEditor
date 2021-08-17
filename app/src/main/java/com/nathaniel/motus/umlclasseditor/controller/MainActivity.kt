@@ -1,71 +1,34 @@
 package com.nathaniel.motus.umlclasseditor.controller
 
 import android.Manifest
-import android.view.View.OnTouchListener
-import com.nathaniel.motus.umlclasseditor.view.GraphFragment
-import com.nathaniel.motus.umlclasseditor.model.UmlProject
-import com.nathaniel.motus.umlclasseditor.view.GraphView.TouchMode
-import com.nathaniel.motus.umlclasseditor.model.UmlClass
-import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
-import android.graphics.Typeface
-import android.graphics.DashPathEffect
-import android.content.res.TypedArray
-import com.nathaniel.motus.umlclasseditor.R
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
-import com.nathaniel.motus.umlclasseditor.model.UmlRelation
-import com.nathaniel.motus.umlclasseditor.view.GraphView
-import com.nathaniel.motus.umlclasseditor.model.UmlClass.UmlClassType
-import com.nathaniel.motus.umlclasseditor.model.UmlClassAttribute
-import com.nathaniel.motus.umlclasseditor.model.UmlClassMethod
-import com.nathaniel.motus.umlclasseditor.model.UmlEnumValue
-import android.content.DialogInterface
-import com.nathaniel.motus.umlclasseditor.controller.FragmentObserver
-import android.os.Bundle
-import androidx.activity.OnBackPressedCallback
-import com.nathaniel.motus.umlclasseditor.view.EditorFragment
-import android.widget.AdapterView.OnItemLongClickListener
-import android.widget.ExpandableListView.OnChildClickListener
-import com.nathaniel.motus.umlclasseditor.view.ClassEditorFragment
-import com.nathaniel.motus.umlclasseditor.model.AdapterItem
-import com.nathaniel.motus.umlclasseditor.model.AdapterItemComparator
-import com.nathaniel.motus.umlclasseditor.model.AddItemString
-import com.nathaniel.motus.umlclasseditor.controller.CustomExpandableListViewAdapter
-import com.nathaniel.motus.umlclasseditor.model.UmlType
-import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
-import com.nathaniel.motus.umlclasseditor.view.MethodEditorFragment
-import com.nathaniel.motus.umlclasseditor.model.TypeMultiplicity
-import com.nathaniel.motus.umlclasseditor.model.TypeNameComparator
-import com.nathaniel.motus.umlclasseditor.model.MethodParameter
-import com.nathaniel.motus.umlclasseditor.view.AttributeEditorFragment
-import com.nathaniel.motus.umlclasseditor.view.ParameterEditorFragment
-import org.json.JSONArray
-import org.json.JSONObject
-import org.json.JSONException
-import kotlin.jvm.JvmOverloads
-import android.content.pm.PackageManager
-import android.content.pm.PackageInfo
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.navigation.NavigationView
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.core.view.MenuCompat
-import androidx.annotation.RequiresApi
-import android.os.Build
-import android.content.SharedPreferences
-import android.content.SharedPreferences.Editor
-import com.nathaniel.motus.umlclasseditor.controller.MainActivity
-import androidx.core.view.GravityCompat
-import android.content.Intent
-import android.util.SparseBooleanArray
-import android.text.Html
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.DialogInterface
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import android.text.Html
 import android.util.Log
-import android.view.*
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.GravityCompat
+import androidx.core.view.MenuCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
+import com.google.android.material.navigation.NavigationView
+import com.nathaniel.motus.umlclasseditor.R
+import com.nathaniel.motus.umlclasseditor.model.*
+import com.nathaniel.motus.umlclasseditor.model.UmlRelation.UmlRelationType
+import com.nathaniel.motus.umlclasseditor.model.UmlType.TypeLevel
+import com.nathaniel.motus.umlclasseditor.view.*
+import com.nathaniel.motus.umlclasseditor.view.GraphView.GraphViewObserver
 import java.io.File
 import java.util.*
 
@@ -127,7 +90,7 @@ class MainActivity : AppCompatActivity(), FragmentObserver, GraphViewObserver,
     override fun onStart() {
         super.onStart()
         mGraphView = findViewById(R.id.graphview)
-        mGraphView?.setUmlProject(project) // Smart cast to 'GraphView!' is impossible, because 'mGraphView' is a mutable property that could have been changed by this time
+        mGraphView?.setUmlProject(project)
         Log.i("TEST", "onStart")
     }
 
@@ -613,7 +576,6 @@ class MainActivity : AppCompatActivity(), FragmentObserver, GraphViewObserver,
     private fun menuDeleteCustomTypes() {
         val listView = ListView(this)
         val listArray = mutableListOf<String>()
-
         for (t in UmlType.Companion.umlTypes) if (t!!.isCustomUmlType) listArray.add(t.name!!)
         Collections.sort(listArray, TypeNameComparator())
         val adapter =
